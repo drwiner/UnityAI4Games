@@ -6,4 +6,5 @@ public class SteeringParams : MonoBehaviour {
     public float MAXSPEED;
     public float MAXANGULAR;
     public float MAXACCEL;
+    public float MAXROTATION;
 }

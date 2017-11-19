@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Kinematic : MonoBehaviour {
+public class DIYRigidBody : MonoBehaviour {
 
     private SteeringParams sp;
     private Vector3 position;
@@ -11,13 +11,6 @@ public class Kinematic : MonoBehaviour {
     private Vector3 velc;
     private float height;
     private KinematicSteeringOutput steering;
-    //private Steering seeking;
-    //private Steering arriving;
-
-    //private KinematicSeek seek;
-    //private KinematicArrive arrive;
-    //public Vector3 force;
-    //public float torque;
 
     // Use this for initialization
     void Start () {
@@ -30,36 +23,29 @@ public class Kinematic : MonoBehaviour {
     }
 
 	// Update is called once per frame
-	public KinematicSteeringOutput updateSteering(KinematicSteering ks, DynoSteering ds) {
+	public KinematicSteeringOutput updateSteering(DynoSteering ds, float time) {
 
         steering = new KinematicSteeringOutput();
 
         // make Updates
-        position += ks.velc * Time.deltaTime;
-        orientation += ks.rotation * Time.deltaTime;
+        position += velc * time;
+        orientation += rotation * time;
 
-        velc += ds.force * Time.deltaTime;
-        orientation += ds.torque * Time.deltaTime;
+        velc += ds.force * time;
+        orientation += ds.torque * time;
 
-        steering.position = velc;
+        if (velc.magnitude > sp.MAXSPEED)
+        {
+            velc.Normalize();
+            velc = velc * sp.MAXSPEED;
+        }
+
+        steering.position = position;
         steering.orientation = orientation;
 
         return steering;
 	}
 
-    //private Steering Steer()
-    //{
-    //    seek_steering = seek.updateSteering();
-    //    arrive_steering = arrive.updateSteering();
-    //    if (arrive_steering.force == new Vector3(0f, 0f, 0f))
-    //    {
-    //        return arrive_steering;
-    //    }
-    //    else {
-    //        seek_steering.force
-    //    }
-        
-    //}
 
     public void setOrientation(float new_value)
     {
@@ -69,6 +55,11 @@ public class Kinematic : MonoBehaviour {
     public void setRotation(float new_rotation)
     {
         rotation = new_rotation;
+    }
+
+    public float getOrientation()
+    {
+        return orientation;
     }
 
     public float getNewOrientation(Vector3 new_force)
@@ -81,6 +72,22 @@ public class Kinematic : MonoBehaviour {
             return orientation;
         }
     }
+
+    public Vector3 getVelocity()
+    {
+        return velc;
+    }
+
+    public void setVelocity(Vector3 new_velc)
+    {
+        velc = new_velc;
+    }
+
+    public float getRotation()
+    {
+        return rotation;
+    }
+
 
     public static float mapToRange(float radians)
     {

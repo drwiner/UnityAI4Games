@@ -7,7 +7,6 @@ public class KinematicArrive : MonoBehaviour {
     private Goal goalObject;
     private Transform goal;
     private SteeringParams sp;
-    private Kinematic charKinematic;
     public float radius_of_satisfaction = 0.5f;
     public float time_to_target = 0.25f;
 
@@ -15,15 +14,14 @@ public class KinematicArrive : MonoBehaviour {
 	void Start () {
         goalObject = GetComponent<Goal>();
         sp = GetComponent<SteeringParams>();
-        charKinematic = GetComponent<Kinematic>();
 	}
 
     // Update is called once per frame
-    public Vector3 updateSteering()
+    public Vector3 getSteering()
     {
         goal = goalObject.getGoal();
         //steering = new Steering();
-        Vector3 new_velc = goal.position - this.transform.position;
+        Vector3 new_velc = goal.position - transform.position;
 
         if (new_velc.magnitude < radius_of_satisfaction) {
             new_velc = new Vector3(0f, 0f, 0f);
