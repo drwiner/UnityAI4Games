@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class KinematicBehavior : MonoBehaviour {
 
-    private DIYRigidBody char_kinematic;
+    private Kinematic char_kinematic;
     private KinematicSteering ks;
     private DynoSteering ds;
     private KinematicSteeringOutput kso;
@@ -12,11 +12,11 @@ public class KinematicBehavior : MonoBehaviour {
     private KinematicArrive arrive;
 
     private KinematicSteering seeking_output;
-    private Vector3 arrival_output;
+    private Vector3 new_velocity;
 
     // Use this for initialization
     void Start () {
-        char_kinematic = GetComponent<DIYRigidBody>();
+        char_kinematic = GetComponent<Kinematic>();
         seek = GetComponent<KinematicSeek>();
         arrive = GetComponent<KinematicArrive>();
     }
@@ -28,11 +28,12 @@ public class KinematicBehavior : MonoBehaviour {
 
         // Decide on behavior
         //seeking_output = seek.updateSteering();
-        arrival_output = arrive.getSteering();
-        char_kinematic.setVelocity(arrival_output);
+        seeking_output = arrive.getSteering();
+        //seeking_output = seek.getSteering();
+        char_kinematic.setVelocity(seeking_output.velc);
 
         // Manually set orientation for now
-        float new_orient = char_kinematic.getNewOrientation(arrival_output);
+        float new_orient = char_kinematic.getNewOrientation(seeking_output.velc);
         char_kinematic.setOrientation(new_orient);
         char_kinematic.setRotation(0f);
 

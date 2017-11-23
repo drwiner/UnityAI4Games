@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class DIYRigidBody : MonoBehaviour {
+public class Kinematic : MonoBehaviour {
 
     private SteeringParams sp;
     private Vector3 position;

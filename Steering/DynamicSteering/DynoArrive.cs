@@ -8,7 +8,7 @@ public class DynoArrive : MonoBehaviour {
     private Transform goal;
     private SteeringParams sp;
     private DynoSteering ds;
-    private DIYRigidBody charRigidBody;
+    private Kinematic charRigidBody;
     public float goalRadius = 0.5f;
     public float slowRadius = 2.5f;
     public float time_to_target = 0.25f;
@@ -21,7 +21,7 @@ public class DynoArrive : MonoBehaviour {
     void Start () {
         goalObject = GetComponent<Goal>();
         sp = GetComponent<SteeringParams>();
-        charRigidBody = GetComponent<DIYRigidBody>();
+        charRigidBody = GetComponent<Kinematic>();
     }
 	
 	// Update is called once per frame

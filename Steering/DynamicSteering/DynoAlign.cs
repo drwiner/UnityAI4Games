@@ -9,7 +9,7 @@ public class DynoAlign : MonoBehaviour {
     private Transform goal;
     private SteeringParams sp;
     private DynoSteering ds;
-    private DIYRigidBody charRigidBody;
+    private Kinematic charRigidBody;
     private float targetOrientation;
     public float goalRadius = 0.5f;
     public float slowRadius = 2.5f;
@@ -24,7 +24,7 @@ public class DynoAlign : MonoBehaviour {
     void Start () {
         goalObject = GetComponent<Goal>();
         sp = GetComponent<SteeringParams>();
-        charRigidBody = GetComponent<DIYRigidBody>();
+        charRigidBody = GetComponent<Kinematic>();
     }
 
     //public virtual DynoSteering getSteering();
@@ -38,7 +38,7 @@ public class DynoAlign : MonoBehaviour {
         targetOrientation = charRigidBody.getNewOrientation(goal.position - transform.position);
         //rotation = goal.eulerAngles;
         rotation = targetOrientation - charRigidBody.getOrientation();
-        rotation = DIYRigidBody.mapToRange(rotation);
+        rotation = Kinematic.mapToRange(rotation);
         rotationSize = Mathf.Abs(rotation);
 
         if (rotationSize < goalRadius)

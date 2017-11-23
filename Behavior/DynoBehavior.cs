@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class DynoBehavior : MonoBehaviour {
 
-    private DIYRigidBody char_RigidBody;
+    private Kinematic char_RigidBody;
     private KinematicSteering ks;
     private DynoSteering ds;
 
@@ -19,7 +19,7 @@ public class DynoBehavior : MonoBehaviour {
     // Use this for initialization
     void Start()
     {
-        char_RigidBody = GetComponent<DIYRigidBody>();
+        char_RigidBody = GetComponent<Kinematic>();
         //seek = GetComponent<DynoSeek>();
         arrive = GetComponent<DynoArrive>();
         align = GetComponent<DynoAlign>();
