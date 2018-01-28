@@ -33,6 +33,11 @@ public class DynoArrive : MonoBehaviour {
         direction = goal.position - transform.position;
         distance = direction.magnitude;
 
+        if (distance < goalRadius)
+        {
+            return ds;
+        }
+
         if (distance > slowRadius)
         {
             targetSpeed = sp.MAXSPEED;
