@@ -40,7 +40,6 @@ namespace GoalNamespace
             orientation = 0f;
             goal = goalObject.transform;
             goalObject.GetComponent<Renderer>().material = goal_material;
-            //goalObject = (GameObject)goal.parent;
         }
 
         void Update()
@@ -54,9 +53,7 @@ namespace GoalNamespace
             if (changed_goal)
             {
                 previousGoal.GetComponent<Renderer>().material = non_goal_material;
-                //previousGoal.AddComponent<Material>(non_goal_material);
                 goalObject.GetComponent<Renderer>().material = goal_material;
-                //goalObject.AddComponent<Material>(goal_material);
                 changed_goal = false;
                 previousGoal = goalObject;
             }
