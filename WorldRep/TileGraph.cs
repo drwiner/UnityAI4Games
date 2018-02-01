@@ -46,6 +46,11 @@ namespace GraphNamespace
 
         }
 
+        public IEnumerable<Edge> getAdjacentEdges(TileNode tn)
+        {
+            return edges.Where(e => e.hasNode(tn));
+        }
+
         //private 
 
         private bool isAdjacent(Vector3 a, Vector3 b)
