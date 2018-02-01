@@ -8,9 +8,8 @@ namespace GraphNamespace
 
     public class TileGraph : MonoBehaviour
     {
-        private List<TileNode> nodes;
-        private List<Edge> edges;
-
+        public List<TileNode> nodes { get; set; }
+        public List<Edge> edges { get; set; }
 
         void Start()
         {

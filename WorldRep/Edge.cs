@@ -31,6 +31,24 @@ namespace GraphNamespace
             return false;
         }
 
+        public bool hasNode(TileNode other)
+        {
+            if (other.isEqual(s))
+                return true;
+            if (other.isEqual(t))
+                return true;
+            return false;
+        }
+
+        public TileNode getNeighbor(TileNode other)
+        {
+            if (other.isEqual(s))
+                return t;
+            if (other.isEqual(t))
+                return s;
+            throw new System.ArgumentException("other node " + other.ToString() + " is not in this edge");
+        }
+
         public override string ToString()
         {
             return s.ToString() + " --" + weight.ToString() + "-- " + t.ToString();
