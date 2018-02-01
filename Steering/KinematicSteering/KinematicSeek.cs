@@ -2,26 +2,33 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class KinematicSeek : MonoBehaviour {
+namespace SteeringNamespace
+{
 
-    private KinematicSteering steering;
-    private SteeringParams sp;
-    private Goal goalObject;
-    private Transform goal;
+    public class KinematicSeek : MonoBehaviour
+    {
 
-    // Use this for initialization
-    void Start () {
-        goalObject = GetComponent<Goal>();
-        sp = GetComponent<SteeringParams>();
-    }
-	
-	// Update is called once per frame
-	public KinematicSteering getSteering () {
-        goal = goalObject.getGoal();
-        steering = new KinematicSteering();
-        steering.velc = goal.position - this.transform.position;
-        steering.velc.Normalize();
-        steering.velc = steering.velc * sp.MAXSPEED;
-        return steering;
+        private KinematicSteering steering;
+        private SteeringParams sp;
+        private Goal goalObject;
+        private Transform goal;
+
+        // Use this for initialization
+        void Start()
+        {
+            goalObject = GetComponent<Goal>();
+            sp = GetComponent<SteeringParams>();
+        }
+
+        // Update is called once per frame
+        public KinematicSteering getSteering()
+        {
+            goal = goalObject.getGoal();
+            steering = new KinematicSteering();
+            steering.velc = goal.position - this.transform.position;
+            steering.velc.Normalize();
+            steering.velc = steering.velc * sp.MAXSPEED;
+            return steering;
+        }
     }
 }
