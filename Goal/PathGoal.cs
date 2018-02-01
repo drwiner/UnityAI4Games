@@ -33,6 +33,7 @@ namespace GoalNamespace
             goalObject = tn.gameObject;
             if (previousGoal != null)
                 previousGoal.GetComponent<Renderer>().material = non_goal_material;
+            previousGoal = goalObject;
             goalObject.GetComponent<Renderer>().material = goal_material;
             goalPosition = QuantizeLocalize.Localize(tn);
         }
