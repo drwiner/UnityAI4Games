@@ -10,6 +10,7 @@ namespace GraphNamespace
     {
         public List<TileNode> nodes { get; set; }
         public List<Edge> edges { get; set; }
+        public float adjacent_distance = 1.3f;
 
         void Start()
         {
@@ -55,11 +56,9 @@ namespace GraphNamespace
 
         private bool isAdjacent(Vector3 a, Vector3 b)
         {
-            if (Mathf.Abs(a.x - b.x) < 1.5)
-            {
-                return true;
-            }
-            if (Mathf.Abs(a.z - b.z) < 1.5)
+            float zdist = Mathf.Abs(a.z - b.z);
+            float xdist = Mathf.Abs(a.x - b.x);
+            if (zdist < adjacent_distance && xdist < adjacent_distance)
             {
                 return true;
             }

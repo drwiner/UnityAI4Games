@@ -6,7 +6,7 @@ using GraphNamespace;
 namespace GoalNamespace {
     public class SetGoalWithMouseClick : MonoBehaviour {
 
-        public Vector3 clicked;
+        private Vector3 clicked;
         public TileGraph tg;
         private PathGoal goal_script;
 
@@ -21,6 +21,7 @@ namespace GoalNamespace {
             {
                 bool false_alarm = false;
                 Vector3 mouse_pos = Input.mousePosition;
+
                 if (mouse_pos.x < 0 || mouse_pos.y < 0 || mouse_pos.x > Screen.width || mouse_pos.y > Screen.height)
                 {
                     false_alarm = true;

@@ -10,7 +10,7 @@ namespace SteeringNamespace
     public class DynoAlign_PathFollow : MonoBehaviour
     {
 
-        private PathGoal goalObject;
+        //private PathGoal goalObject;
         private Vector3 goal;
         private SteeringParams sp;
         private DynoSteering ds;
@@ -28,7 +28,7 @@ namespace SteeringNamespace
         // Use this for initialization
         void Start()
         {
-            goalObject = GetComponent<PathGoal>();
+            //goalObject = GetComponent<PathGoal>();
             sp = GetComponent<SteeringParams>();
             charRigidBody = GetComponent<Kinematic>();
         }
@@ -36,9 +36,9 @@ namespace SteeringNamespace
         //public virtual DynoSteering getSteering();
 
         // Update is called once per frame
-        public DynoSteering getSteering()
+        public DynoSteering getSteering(Vector3 goal)
         {
-            goal = goalObject.getGoal();
+            //goal = goalObject.getGoal();
 
             ds = new DynoSteering();
 

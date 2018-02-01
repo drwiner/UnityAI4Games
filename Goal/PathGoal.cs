@@ -8,9 +8,9 @@ namespace GoalNamespace
 
     public class PathGoal : MonoBehaviour
     {
-
+        public TileNode tileGoal;
         private GameObject previousGoal;
-        public GameObject goalObject;
+        private GameObject goalObject;
         private Vector3 goalPosition;
         public Material non_goal_material;
         public Material goal_material;
@@ -19,6 +19,7 @@ namespace GoalNamespace
         {
             previousGoal = null;
             goalPosition = transform.position;
+            tileGoal = null;
 
             if (goalObject != null)
             {
@@ -30,6 +31,7 @@ namespace GoalNamespace
 
         public void setGoal(TileNode tn)
         {
+            tileGoal = tn;
             goalObject = tn.gameObject;
             if (previousGoal != null)
                 previousGoal.GetComponent<Renderer>().material = non_goal_material;
@@ -41,6 +43,11 @@ namespace GoalNamespace
         public Vector3 getGoal()
         {
             return goalPosition;
+        }
+
+        public TileNode getGoalTile()
+        {
+            return tileGoal;
         }
 
 
