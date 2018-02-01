@@ -16,6 +16,7 @@ namespace SteeringNamespace
 
         public TileGraph tg;
         private TileNode currentTile;
+        private TileNode nextTile;
         private TileNode currentGoalTile;
         private TileNode prevGoalTile;
 
@@ -43,14 +44,17 @@ namespace SteeringNamespace
         void Update()
         {
             currentGoalTile = goalComponent.getGoalTile();
+            currentTile = QuantizeLocalize.Quantize(transform.position, tg);
             if (prevGoalTile != currentGoalTile)
             {
                 foreach (TileNode tn in currentPath)
                 {
+                    if (tn.isEqual(currentTile))
+                        continue;
                     tn.setOffMaterial();
                 }
 
-                currentTile = QuantizeLocalize.Quantize(transform.position, tg);
+                
                 currentPath = PathFind.Dijkstra(tg, currentTile, currentGoalTile);
                 prevGoalTile = currentGoalTile;
                 // light up all tiles
@@ -60,36 +64,43 @@ namespace SteeringNamespace
                         continue;
                     tn.setPlanMaterial();
                 }
+
+                currentGoal = QuantizeLocalize.Localize(currentPath.Pop());
             }
 
 
             // determine how to set force
-            if (currentPath.Count > 1)
+            if (currentPath.Count > 0)
             {
                 ds_force = seek.getSteering(currentGoal);
                 // pop when seek says we've made it into range and seek the next target
                 if (seek.changeGoal)
                 {
-                    currentGoal = QuantizeLocalize.Localize(currentPath.Pop());
-                    ds_force = seek.getSteering(currentGoal);
+                    nextTile = currentPath.Pop();
+                    nextTile.setNextMaterial();
+                    currentGoal = QuantizeLocalize.Localize(nextTile);
+                    if (currentPath.Count > 0)
+                        ds_force = seek.getSteering(currentGoal);
+                    else
+                        ds_force = arrive.getSteering(currentGoal);
                 }
             }
-            else if (currentPath.Count == 1)
-                ds_force = arrive.getSteering(currentGoal);
-
-
-            if (currentPath.Count > 0)
+            else if (currentPath.Count == 0)
             {
-                ds_torque = align.getSteering(currentGoal);
-
-                ds = new DynoSteering();
-                ds.force = ds_force.force;
-                ds.torque = ds_torque.torque;
-
-                kso = char_RigidBody.updateSteering(ds, Time.deltaTime);
-                transform.position = new Vector3(kso.position.x, transform.position.y, kso.position.z);
-                transform.rotation = Quaternion.Euler(0f, kso.orientation * Mathf.Rad2Deg, 0f);
+                ds_force = arrive.getSteering(currentGoal);
             }
+
+
+            ds_torque = align.getSteering(currentGoal);
+
+            ds = new DynoSteering();
+            ds.force = ds_force.force;
+            ds.torque = ds_torque.torque;
+
+            kso = char_RigidBody.updateSteering(ds, Time.deltaTime);
+            transform.position = new Vector3(kso.position.x, transform.position.y, kso.position.z);
+            transform.rotation = Quaternion.Euler(0f, kso.orientation * Mathf.Rad2Deg, 0f);
+
 
         }
     }

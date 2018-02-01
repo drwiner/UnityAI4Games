@@ -10,6 +10,7 @@ namespace GraphNamespace
         public Material on_material;
         public Material off_material;
         public Material plan_material;
+        public Material next_material;
         private Renderer render;
         //private Vector3 position;
 
@@ -40,6 +41,11 @@ namespace GraphNamespace
         public void setOffMaterial()
         {
             render.material = off_material;
+        }
+
+        public void setNextMaterial()
+        {
+            render.material = next_material;
         }
 
         IEnumerator WaitToChange(float waitTime)

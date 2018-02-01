@@ -11,7 +11,6 @@ namespace SteeringNamespace
 
         private SteeringParams sp;
         private PathGoal goalObject;
-        private Vector3 goal;
         private DynoSteering steering;
         public float changeGoalRadius = 0.4f;
         private Vector3 direction;
@@ -44,8 +43,6 @@ namespace SteeringNamespace
             steering.force.Normalize();
             steering.force = steering.force * sp.MAXACCEL;
             steering.torque = 0f;
-
-
 
             return steering;
         }
