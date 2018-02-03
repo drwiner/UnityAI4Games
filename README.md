@@ -5,4 +5,4 @@
 [Basic Pathfinding](https://www.youtube.com/watch?v=0CxXPmaL3xM)
 
 
-<img height="400" src="https://github.com/drwiner/UnityAI4Games/blob/master/boid_tile_world.jpg" alt="Boid" />
+<img height="300" src="https://github.com/drwiner/UnityAI4Games/blob/master/boid_tile_world.jpg" alt="Boid" />
