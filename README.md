@@ -4,5 +4,5 @@
 
 [Basic Pathfinding](https://www.youtube.com/watch?v=0CxXPmaL3xM)
 
-![Boid](https://github.com/drwiner/UnityAI4Games/blob/master/boid_tile_world.jpg)
 
+<img src="https://github.com/drwiner/UnityAI4Games/blob/master/boid_tile_world.jpg" alt="Boid" style="width: 200px;"/>
