@@ -56,7 +56,7 @@ namespace GoalNamespace {
                 cost_so_far = node_dict[v].dist;
                 Expanded.Add(v);
 
-                List<Edge> experiment = tg.getAdjacentEdges(v) as List<Edge>;
+                //List<Edge> experiment = tg.getAdjacentEdges(v) as List<Edge>;
                 foreach (Edge adj_edge in tg.getAdjacentEdges(v))
                 {
                     other = adj_edge.getNeighbor(v);
