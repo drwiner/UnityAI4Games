@@ -13,10 +13,10 @@ namespace GraphNamespace
         {
             float best_dist = 1000f;
             TileNode best_node = null;
-            List<Edge> adj_edges = tg.getAdjacentEdges(last_node) as List<Edge>;
+            List<Edge> adj_edges = tg.GetAdjacentEdges(last_node) as List<Edge>;
             foreach (Edge adj_edge in adj_edges)
             {
-                TileNode other_node = adj_edge.getNeighbor(last_node);
+                TileNode other_node = adj_edge.GetNeighbor(last_node);
                 float dist = Mathf.Abs(Vector3.Distance(Localize(other_node), position));
                 if (dist < best_dist)
                 {
@@ -31,7 +31,7 @@ namespace GraphNamespace
         {
             float best_dist = 1000f;
             TileNode best_node = null;
-            foreach (TileNode tn in tg.nodes)
+            foreach (TileNode tn in tg.Nodes)
             {
                 float dist = Mathf.Abs(Vector3.Distance(Localize(tn),position));
 

@@ -25,7 +25,7 @@ namespace GoalNamespace {
         private static Dictionary<TileNode, NodeInfo> DijkstraInitialDictLoad(TileNode start, TileGraph tg)
         {
             node_dict = new Dictionary<TileNode, NodeInfo>();
-            foreach (TileNode tn in tg.nodes)
+            foreach (TileNode tn in tg.Nodes)
             {
                 NodeInfo ni = new NodeInfo();
                 if (start.isEqual(tn))
@@ -57,10 +57,10 @@ namespace GoalNamespace {
                 Expanded.Add(v);
 
                 //List<Edge> experiment = tg.getAdjacentEdges(v) as List<Edge>;
-                foreach (Edge adj_edge in tg.getAdjacentEdges(v))
+                foreach (Edge adj_edge in tg.GetAdjacentEdges(v))
                 {
-                    other = adj_edge.getNeighbor(v);
-                    edge_weight = adj_edge.weight;
+                    other = adj_edge.GetNeighbor(v);
+                    edge_weight = adj_edge.Weight;
                     dist_to_node = node_dict[other].dist;
                     if (cost_so_far + edge_weight < dist_to_node)
                     {

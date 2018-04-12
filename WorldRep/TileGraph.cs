@@ -2,26 +2,43 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using System;
 
 namespace GraphNamespace
 {
-
+    [ExecuteInEditMode]
+    [Serializable]
     public class TileGraph : MonoBehaviour
     {
-        public List<TileNode> nodes { get; set; }
-        public List<Edge> edges { get; set; }
-        public float adjacent_distance = 1.3f;
+        [SerializeField]
+        public List<TileNode> Nodes;
+
+        [SerializeField]
+        public List<Edge> Edges;
+
+        [SerializeField]
+        public float adjacent_distance = .6f;
 
         void Start()
         {
-            nodes = new List<TileNode>();
-            edges = new List<Edge>();
+            CalculateEdges();
+        }
+
+        public void Update()
+        {
+            CalculateEdges();
+        }
+
+        public void CalculateEdges()
+        {
+            Nodes = new List<TileNode>();
+            Edges = new List<Edge>();
 
             for (int i = 0; i < transform.childCount; i++)
             {
 
                 TileNode tn = transform.GetChild(i).GetComponent<TileNode>();
-                nodes.Add(tn);
+                Nodes.Add(tn);
 
                 for (int j = 0; j < transform.childCount; j++)
                 {
@@ -32,33 +49,36 @@ namespace GraphNamespace
 
                     TileNode other_node = transform.GetChild(j).GetComponent<TileNode>();
 
-                    if (isAdjacent(tn.transform.position, other_node.transform.position))
+                    if (IsAdjacent(tn.transform.position, other_node.transform.position))
                     {
                         Edge e = new Edge(tn, other_node, 1f);
-                        if (!edges.Any(other_edge => other_edge.isEqual(e)))
+                        if (!Edges.Any(other_edge => other_edge.IsEqual(e)))
                         {
-                            edges.Add(e);
+                            Edges.Add(e);
                             //Debug.Log(e);
                         }
                     }
 
                 }
             }
-
         }
 
-        public IEnumerable<Edge> getAdjacentEdges(TileNode tn)
+        public IEnumerable<Edge> GetAdjacentEdges(TileNode tn)
         {
-            return edges.Where(e => e.hasNode(tn));
+            return Edges.Where(e => e.HasNode(tn));
         }
 
         //private 
 
-        private bool isAdjacent(Vector3 a, Vector3 b)
+        private bool IsAdjacent(Vector3 a, Vector3 b)
         {
             float zdist = Mathf.Abs(a.z - b.z);
             float xdist = Mathf.Abs(a.x - b.x);
-            if (zdist < adjacent_distance && xdist < adjacent_distance)
+            if (zdist < adjacent_distance && xdist < 2*adjacent_distance)
+            {
+                return true;
+            }
+            if (xdist < adjacent_distance && zdist < 2*adjacent_distance)
             {
                 return true;
             }

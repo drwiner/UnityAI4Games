@@ -1,0 +1,1 @@
+These scripts may require the "BoltFreezer.dll" plugin, found at github.com/drwiner/boltfreezer, may require building solution in visual studio and copy-pasting to a "Plugins" folder under Assets.

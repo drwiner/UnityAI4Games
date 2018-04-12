@@ -1,9 +1,11 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace GraphNamespace
 {
+    [Serializable]
     public class TileNode : MonoBehaviour
     {
 
