@@ -16,6 +16,12 @@ namespace SteeringNamespace
         private float height;
         private KinematicSteeringOutput steering;
 
+        public Vector3 Position
+        {
+            get { return position; }
+            set { position = value; }
+        }
+
         // Use this for initialization
         void Start()
         {

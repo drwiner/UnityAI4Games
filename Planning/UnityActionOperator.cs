@@ -28,6 +28,9 @@ namespace PlanningNamespace
         public List<NonEqualTuple> NonEqualityConstraints;
 
         [SerializeField]
+        public List<string> UnityInstructions;
+
+        [SerializeField]
         public string opString;
 
         private Operator thisOp;

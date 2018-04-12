@@ -6,10 +6,12 @@ namespace GameAINamespace {
     namespace SteeringNamespace { }
     namespace GraphNamespace { }
     namespace GoalNamespace { }
+    namespace PlanningNamespace { }
 }
 
 namespace UnityAI4Games {
     namespace SteeringNamespace { }
     namespace GraphNamespace { }
     namespace GoalNamespace { }
+    namespace PlanningNamespace { }
 }
