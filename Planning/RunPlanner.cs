@@ -20,7 +20,7 @@ namespace PlanningNamespace
 
         public List<string> PlanSteps;
 
-        public List<string> GroundSteps;
+        private List<string> GroundSteps;
 
         public void Awake()
         {
@@ -78,10 +78,27 @@ namespace PlanningNamespace
 
             GroundActionFactory.PopulateGroundActions(newOps, problem);
             GroundSteps = new List<string>();
+            var adjInitial = initPlan.Initial.Predicates.Where(state => state.Name.Equals("adjacent"));
+            var replacedActions = new List<IOperator>();
             foreach (var ga in GroundActionFactory.GroundActions)
             {
-                GroundSteps.Add(ga.ToString());
+                // If this action has a precondition with name adjacent this is not in initial state, then it's impossible. True ==> impossible. False ==> OK!
+                var isImpossible = ga.Preconditions.Where(pre => pre.Name.Equals("adjacent") && pre.Sign).Any(pre => !adjInitial.Contains(pre));
+
+                if (isImpossible)
+                {
+                    continue;
+                }
+                else
+                {
+                    //GroundSteps.Add(ga.ToString());
+                    replacedActions.Add(ga);
+                    Debug.Log(ga.ToString());
+                }
             }
+            GroundActionFactory.Reset();
+            GroundActionFactory.GroundActions = replacedActions;
+            GroundActionFactory.GroundLibrary = replacedActions.ToDictionary(item => item.ID, item => item);
             CacheMaps.Reset();
             CacheMaps.CacheLinks(GroundActionFactory.GroundActions);
             CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, initPlan.Goal.Predicates);
