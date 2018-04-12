@@ -36,7 +36,12 @@ namespace GraphNamespace
 
             for (int i = 0; i < transform.childCount; i++)
             {
-
+                var go = transform.GetChild(i).gameObject;
+                var origName = go.name.Split(' ');
+                if (origName.Count() > 1)
+                {
+                    go.name = string.Format("{0}{1}", origName.First(), origName.Last());
+                }
                 TileNode tn = transform.GetChild(i).GetComponent<TileNode>();
                 Nodes.Add(tn);
 

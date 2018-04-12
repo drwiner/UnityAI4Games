@@ -40,6 +40,7 @@ namespace PlanningNamespace
         public void PrepareAndRun()
         {
             var initPlan = PreparePlanner();
+            Debug.Log("Planner and initial plan Prepared");
             var solution = Run(initPlan, new ADstar(), new E3(new AddReuseHeuristic()), 10000);
             if (solution != null)
             {
@@ -77,10 +78,10 @@ namespace PlanningNamespace
 
             GroundActionFactory.PopulateGroundActions(newOps, problem);
             GroundSteps = new List<string>();
-            //foreach(var ga in GroundActionFactory.GroundActions)
-            //{
-            //    GroundSteps.Add(ga.ToString());
-            //}
+            foreach (var ga in GroundActionFactory.GroundActions)
+            {
+                GroundSteps.Add(ga.ToString());
+            }
             CacheMaps.Reset();
             CacheMaps.CacheLinks(GroundActionFactory.GroundActions);
             CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, initPlan.Goal.Predicates);
@@ -114,7 +115,7 @@ namespace PlanningNamespace
 
         public List<IObject> GetObjects()
         {
-            var locationHost = GameObject.FindGameObjectWithTag("LocationHost");
+            var locationHost = GameObject.FindGameObjectWithTag("Locations");
             var locations = Enumerable.Range(0, locationHost.transform.childCount).Select(i => locationHost.transform.GetChild(i));
             var actorHost = GameObject.FindGameObjectWithTag("ActorHost");
             var actors = Enumerable.Range(0, actorHost.transform.childCount).Select(i => actorHost.transform.GetChild(i));
@@ -127,9 +128,30 @@ namespace PlanningNamespace
             }
             foreach (var actor in actors)
             {
-                objects.Add(new Obj(actor.name, actor.tag) as IObject);
+                var superordinateTypes = GetSuperOrdinateTypes(actor.tag);
+                objects.Add(new Obj(actor.name, actor.tag, superordinateTypes) as IObject);
             }
             return objects;
+        }
+
+        public List<string> GetSuperOrdinateTypes(string subtype)
+        {
+            var parentGo = GameObject.Find(subtype).transform;
+            
+            var superOrdinateTypes = new List<string>();
+            superOrdinateTypes.Add(subtype);
+            while (true)
+            {
+                parentGo = parentGo.parent;
+                var parentName = parentGo.name;
+                if (parentName.Equals("TypeHierarchy"))
+                {
+                    break;
+                }
+                superOrdinateTypes.Add(parentName);
+            }
+
+            return superOrdinateTypes;
         }
     }
 }

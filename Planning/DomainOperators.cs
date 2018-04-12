@@ -10,9 +10,15 @@ namespace PlanningNamespace
     [ExecuteInEditMode]
     public class DomainOperators : MonoBehaviour
     {
+        private List<Operator> domainOps;
 
-        private List<Operator> DomainOps;
+        // Hides this as serializable field on game object
+        public List<Operator> DomainOps {
+            get { return domainOps;}
+            set { domainOps = value; }
+        }
 
+        [SerializeField]
         public List<string> OperatorNames;
 
         public bool reset;

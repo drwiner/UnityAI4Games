@@ -120,8 +120,11 @@ namespace PlanningNamespace
             var terms = new List<ITerm>();
             foreach (var item in stringArray.Skip(1))
             {
-                var go = GameObject.Find(item);
-                var newObj = new Term(item, go.name, go.tag);
+                var param = MutableParameters[Int32.Parse(item)];
+                var newObj = new Term(item)
+                {
+                    Type = param.name
+                };
                 terms.Add(newObj as ITerm);
             }
             var newPredicate = new Predicate(predName, terms, signage);
