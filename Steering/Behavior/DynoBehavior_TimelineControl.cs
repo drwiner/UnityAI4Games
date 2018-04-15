@@ -67,7 +67,7 @@ namespace SteeringNamespace
 
         public void InitiateExternally()
         {
-            PD = GameObject.FindGameObjectWithTag("FabulaTimeline").GetComponent<PlayableDirector>();
+            PD = GameObject.FindGameObjectWithTag("ExecuteTimeline").GetComponent<PlayableDirector>();
             SP = GetComponent<SteeringParams>();
             KinematicBody = GetComponent<Kinematic>();
             SteerList = new List<List<SteeringPlayable>>();

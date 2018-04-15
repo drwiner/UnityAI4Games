@@ -34,6 +34,8 @@ namespace PlanningNamespace
         public string opString;
 
         private Operator thisOp;
+		
+		public bool reset = false;
 
         public Operator ThisOp
         {
@@ -56,7 +58,11 @@ namespace PlanningNamespace
             {
                 Name = this.gameObject.name;
             }
-            CreateOperator();
+			
+			if(reset){
+				reset = false;
+				CreateOperator();
+			}
         }
 
 

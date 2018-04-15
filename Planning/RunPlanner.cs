@@ -41,7 +41,8 @@ namespace PlanningNamespace
         {
             var initPlan = PreparePlanner();
             Debug.Log("Planner and initial plan Prepared");
-            var solution = Run(initPlan, new ADstar(), new E3(new AddReuseHeuristic()), 10000);
+            var solution = Run(initPlan, new ADstar(), new E0(new AddReuseHeuristic()), 100000);
+            //var solution = Run(initPlan, new BFS(), new Nada(new ZeroHeuristic()), 20000);
             if (solution != null)
             {
                 Debug.Log(solution.ToStringOrdered());
@@ -53,6 +54,7 @@ namespace PlanningNamespace
             }
             else
             {
+                
                 Debug.Log("No good");
             }
         }
@@ -118,6 +120,7 @@ namespace PlanningNamespace
             {
                 return Solutions[0];
             }
+            Debug.Log(string.Format("explored: {0}, expanded: {1}", POP.Open, POP.Expanded));
             return null;
         }
 

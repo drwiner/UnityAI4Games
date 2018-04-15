@@ -6,12 +6,10 @@ using System.Linq;
 using UnityEngine.Timeline;
 using UnityEngine.Playables;
 using System;
+using SteeringNamespace;
 
 namespace PlanningNamespace
 {
-
-
-    [ExecuteInEditMode]
     public class ExecutePlan : MonoBehaviour
     {
 
@@ -27,6 +25,7 @@ namespace PlanningNamespace
         {
             planner = GameObject.FindGameObjectWithTag("Planner").GetComponent<RunPlanner>();
             playableDirector = GetComponent<PlayableDirector>();
+            playableDirector.Stop();
         }
 
         public void Update()
@@ -34,6 +33,7 @@ namespace PlanningNamespace
             if (execute)
             {
                 Execute();
+                execute = false;
             }
         }
 
@@ -71,77 +71,101 @@ namespace PlanningNamespace
 
                 // Follow Unity Instructions
                 var instructions = action.UnityInstructions;
-
+                var st = (double)startTime;
                 foreach (var instruction in instructions)
                 {
-                    ProcessInstruction(instruction, terms, startTime, startTime + 2);
+                    ProcessInstruction(instruction, terms, st, 2);
                 }
                 startTime += 2;
             }
-            playableDirector.Play();
+            playableDirector.playableAsset = executeTimeline;
+            playableDirector.Play(executeTimeline);
         }
 
         public void ProcessInstruction(string instruction, List<GameObject> terms, double startTime, double duration)
         {
             var instructionParts = instruction.Split(' ');
             var instructionType = instructionParts[0];
+
+            
             
             var CI = new ClipInfo(this.playableDirector, startTime, duration, instruction);
-            if (instructionType.Equals("scale"))
-            {
-                var rescale = new Vector3(float.Parse(instructionParts[2]), float.Parse(instructionParts[3]), float.Parse(instructionParts[4]));
-                var agent = terms[Int32.Parse(instructionParts[1])];
-                var newAgent = GameObject.Instantiate(agent);
-                var destination = newAgent.transform;
-                newAgent.GetComponent<MeshRenderer>().enabled = false;
-                destination.localScale = rescale;
-                SimpleLerpClip(agent, agent.transform, destination, CI);
 
-            }
-            else if (instructionType.Equals("takePosition"))
-            {
-                // argument 1 is to take position of second
-                var destination = terms[Int32.Parse(instructionParts[2])].transform;
-                SimpleLerpClip(terms[1], terms[1].transform, destination, CI);
-            }
-            else if (instructionType.Equals("addPosition"))
+            if (instructionType.Equals("steer"))
             {
                 var agent = terms[Int32.Parse(instructionParts[1])];
-                // adds vector3
-                var addition = new Vector3(float.Parse(instructionParts[2]), float.Parse(instructionParts[3]), float.Parse(instructionParts[4]));
-                var newAgent = GameObject.Instantiate(agent);
-                var destination = newAgent.transform;
-                newAgent.GetComponent<MeshCollider>().enabled = false;
-                destination.position += addition;
-                SimpleLerpClip(agent, agent.transform, destination.transform, CI);
-            }
-            else if (instructionType.Equals("parent"))
-            {
+                var source = terms[Int32.Parse(instructionParts[2])];
+                var sink = terms[Int32.Parse(instructionParts[3])];
 
-            }
-            else if (instructionType.Equals("deparent"))
-            {
+                var displayName = string.Format("{0} {1} {2} {3}", instructionType, agent.name, source.name, sink.name);
+                CI.display = displayName;
 
+                // Initiate the Steering capability of the agent
+                var DS_TC = agent.GetComponent<DynoBehavior_TimelineControl>();
+                DS_TC.InitiateExternally();
+
+                var steerStart = new Vector3(source.transform.position.x, agent.transform.position.y, source.transform.position.z);
+                var steerFinish = new Vector3(sink.transform.position.x, agent.transform.position.y, sink.transform.position.z);
+                // arg 1 is agent, arg 2 is source, arg 3 is destination
+                SteerClip(agent, steerStart, steerFinish, true, true, true, CI);
             }
-            else if (instructionType.Equals("steer"))
-            {
-                // noninstantaneous...
-            }
-            else
-            {
-                Debug.Log(string.Format("instruction type {0} not yet written.", instructionType));
-                throw new System.Exception();
-            }
+
+            //if (instructionType.Equals("scale"))
+            //{
+            //    var rescale = new Vector3(float.Parse(instructionParts[2]), float.Parse(instructionParts[3]), float.Parse(instructionParts[4]));
+            //    var agent = terms[Int32.Parse(instructionParts[1])];
+            //    var destination = new Trans(agent.transform);
+            //    destination.localScale = rescale;
+            //    SimpleLerpClip(agent, destination, CI);
+
+            //}
+            //else if (instructionType.Equals("takePosition"))
+            //{
+            //    // argument 1 is to take position of second
+            //    var destination = terms[Int32.Parse(instructionParts[2])].transform;
+            //    SimpleLerpClip(terms[1], new Trans(destination), CI);
+            //}
+            //else if (instructionType.Equals("addPosition"))
+            //{
+            //    var agent = terms[Int32.Parse(instructionParts[1])];
+            //    // adds vector3
+            //    var addition = new Vector3(float.Parse(instructionParts[2]), float.Parse(instructionParts[3]), float.Parse(instructionParts[4]));
+            //    var destination = new Trans(agent.transform);
+
+            //    destination.position += addition;
+            //    SimpleLerpClip(agent, destination, CI);
+            //}
+            //else if (instructionType.Equals("parent"))
+            //{
+
+            //}
+            //else if (instructionType.Equals("deparent"))
+            //{
+
+            //}
+            //else if (instructionType.Equals("steer"))
+            //{
+            //    // noninstantaneous...
+            //}
+            //else
+            //{
+            //    Debug.Log(string.Format("instruction type {0} not yet written.", instructionType));
+            //    throw new System.Exception();
+            //}
 
         }
 
 
-        public void TransformBind(LerpToMoveObjectAsset tpObj, GameObject obj_to_move, Transform start_pos, Transform end_pos)
+        public void TransformBind(LerpToMoveObjectAsset tpObj, GameObject obj_to_move, Trans end_pos)
         {
+            var GO = new GameObject();
+            GO.transform.position = end_pos.position;
+            GO.transform.rotation = end_pos.rotation;
+            GO.transform.localScale = end_pos.localScale;
             tpObj.ObjectToMove.exposedName = UnityEditor.GUID.Generate().ToString();
             tpObj.LerpMoveTo.exposedName = UnityEditor.GUID.Generate().ToString();
             playableDirector.SetReferenceValue(tpObj.ObjectToMove.exposedName, obj_to_move);
-            playableDirector.SetReferenceValue(tpObj.LerpMoveTo.exposedName, end_pos);
+            playableDirector.SetReferenceValue(tpObj.LerpMoveTo.exposedName, GO.transform);
         }
         public void AnimateBind(ControlPlayableAsset cpa, GameObject ato)
         {
@@ -160,20 +184,15 @@ namespace PlanningNamespace
             playableDirector.SetReferenceValue(sa.Boid.exposedName, boid);
         }
 
-        public void SimpleLerpClip(GameObject agent, Transform startPos, Transform goalPos, ClipInfo CI)
+        public void SimpleLerpClip(GameObject agent, Trans goalPos, ClipInfo CI)
         {
-            Vector3 dest_minus_origin = goalPos.position - startPos.position;
-            float orientation = Mathf.Atan2(dest_minus_origin.z, -dest_minus_origin.x) * Mathf.Rad2Deg;
-
             var lerpClip = lerpTrack.CreateClip<LerpToMoveObjectAsset>();
 
             lerpClip.start = CI.start;
             lerpClip.duration = CI.duration;
             LerpToMoveObjectAsset lerp_clip = lerpClip.asset as LerpToMoveObjectAsset;
 
-            TransformBind(lerp_clip, agent,
-                MakeCustomizedTransform(startPos.position, orientation).transform,
-                MakeCustomizedTransform(goalPos.position, orientation).transform);
+            TransformBind(lerp_clip, agent, goalPos);
         }
 
         public void SteerClip(GameObject go, Vector3 startPos, Vector3 goalPos, bool depart, bool arrival, bool isMaster, ClipInfo CI)

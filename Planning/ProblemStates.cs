@@ -19,11 +19,13 @@ namespace PlanningNamespace
         public List<IPredicate> goalPredicateList;
 
         public bool reset;
+        public bool setInitialState;
 
         public void Awake()
         {
             ReadProblem();
             reset = false;
+            setInitialState = false;
         }
 
         public void Update()
@@ -32,6 +34,29 @@ namespace PlanningNamespace
             {
                 ReadProblem();
                 reset = false;
+            }
+
+            if (setInitialState)
+            {
+                SetInitialState();
+                setInitialState = false;
+            }
+        }
+
+        public void SetInitialState()
+        {
+            ReadProblem();
+            foreach( var initPredicate in initialPredicateList)
+            {
+                if (initPredicate.Name.Equals("at"))
+                {
+                    // arg 0 is item name
+                    // arg 1 is location name
+                    var locationPosition = GameObject.Find(initPredicate.Terms[1].Constant).transform.position;
+                    var item = GameObject.Find(initPredicate.Terms[0].Constant);
+                    var newPosition = new Vector3(locationPosition.x, item.transform.position.y, locationPosition.z);
+                    item.transform.position = newPosition;
+                }
             }
         }
 

@@ -46,6 +46,7 @@ namespace PlanningNamespace
                 {
                     continue;
                 }
+                opParam.CreateOperator();
                 DomainOps.Add(opParam.ThisOp);
             }
 
