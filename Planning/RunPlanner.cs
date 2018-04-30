@@ -32,8 +32,8 @@ namespace PlanningNamespace
         {
             if (getPlan)
             {
-                PrepareAndRun();
                 getPlan = false;
+                PrepareAndRun();
             }
         }
 
@@ -41,14 +41,18 @@ namespace PlanningNamespace
         {
             var initPlan = PreparePlanner();
             Debug.Log("Planner and initial plan Prepared");
-            var solution = Run(initPlan, new ADstar(), new E0(new AddReuseHeuristic()), 100000);
+
+            // MW-Loc-Conf
+            var solution = Run(initPlan, new ADstar(false), new E0(new AddReuseHeuristic(), true), 60000f);
+
             //var solution = Run(initPlan, new BFS(), new Nada(new ZeroHeuristic()), 20000);
             if (solution != null)
             {
-                Debug.Log(solution.ToStringOrdered());
+                //Debug.Log(solution.ToStringOrdered());
                 PlanSteps = new List<string>();
                 foreach (var step in solution.Orderings.TopoSort(solution.InitialStep))
                 {
+                    Debug.Log(step);
                     PlanSteps.Add(step.ToString());
                 }
             }
@@ -63,22 +67,39 @@ namespace PlanningNamespace
         {
             Parser.path = "/";
 
+            // Update Domain Operators
             var domainOperatorComponent = GameObject.FindGameObjectWithTag("ActionHost").GetComponent<DomainOperators>();
             domainOperatorComponent.Reset();
 
+            // Read and Create Problem
             var problem = CreateProblem(domainOperatorComponent.DomainOps);
-            var domain = new Domain();
-            var PF = new ProblemFreezer("Unity", "", domain, problem);
-            var initPlan = PlanSpacePlanner.CreateInitialPlan(PF);
+            problem.ToString();
+            GroundActionFactory.Reset();
+            CacheMaps.Reset();
 
-            // Assemble Operators
+            // Create Domain
+            
             var newOps = new List<IOperator>();
             foreach (var domainOp in domainOperatorComponent.DomainOps)
             {
                 newOps.Add(domainOp as IOperator);
             }
+            var domain = new Domain("unityWorld", BoltFreezer.Enums.PlanType.PlanSpace, newOps);
+            domain.AddTypePair("SteeringAgent", "Agent");
+            domain.AddTypePair("Block", "Item");
+            domain.AddTypePair("", "SteeringAgent");
+            domain.AddTypePair("", "Block");
+            domain.AddTypePair("", "Location");
 
-            GroundActionFactory.PopulateGroundActions(newOps, problem);
+            // Create Problem Freezer.
+            var PF = new ProblemFreezer("Unity", "", domain, problem);
+            // Create Initial Plan
+            var initPlan = PlanSpacePlanner.CreateInitialPlan(PF);
+
+            GroundActionFactory.PopulateGroundActions(domain, problem);
+
+            // Remove Irrelevant Actions (those which require an adjacent edge but which does not exist. In Refactoring--> make any static
+            Debug.Log("removing irrelevant actions");
             GroundSteps = new List<string>();
             var adjInitial = initPlan.Initial.Predicates.Where(state => state.Name.Equals("adjacent"));
             var replacedActions = new List<IOperator>();
@@ -86,25 +107,40 @@ namespace PlanningNamespace
             {
                 // If this action has a precondition with name adjacent this is not in initial state, then it's impossible. True ==> impossible. False ==> OK!
                 var isImpossible = ga.Preconditions.Where(pre => pre.Name.Equals("adjacent") && pre.Sign).Any(pre => !adjInitial.Contains(pre));
-
                 if (isImpossible)
-                {
                     continue;
-                }
-                else
-                {
-                    //GroundSteps.Add(ga.ToString());
-                    replacedActions.Add(ga);
-                    Debug.Log(ga.ToString());
-                }
+                replacedActions.Add(ga);
             }
             GroundActionFactory.Reset();
             GroundActionFactory.GroundActions = replacedActions;
             GroundActionFactory.GroundLibrary = replacedActions.ToDictionary(item => item.ID, item => item);
-            CacheMaps.Reset();
+
+
             CacheMaps.CacheLinks(GroundActionFactory.GroundActions);
-            CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, initPlan.Goal.Predicates);
+            CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, problem.Goal);
+
+        
+            // Detect Statics
+            Debug.Log("Detecting Statics");
             GroundActionFactory.DetectStatics(CacheMaps.CausalMap, CacheMaps.ThreatMap);
+
+
+
+          //  // Create Composites here. // Compose HTNs
+            //var CompositeMethods = BlockWorldHTNs.ReadCompositeOperators();
+            //Composite.ComposeHTNs(1, CompositeMethods);
+          //  // Only need to do this if you added composite methods
+           // Debug.Log("Caching maps");
+           // CacheMaps.Reset();
+           // CacheMaps.CacheLinks(GroundActionFactory.GroundActions);
+           // CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, initPlan.Goal.Predicates);
+
+            Debug.Log("Caching Heuristic costs");
+            CacheMaps.CacheAddReuseHeuristic(initPlan.Initial);
+
+            // Recreate Initial Plan
+            initPlan = PlanSpacePlanner.CreateInitialPlan(PF);
+
             return initPlan;
         }
 
@@ -115,6 +151,7 @@ namespace PlanningNamespace
                 directory = "/",
                 problemNumber = 0
             };
+            Debug.Log("Running plan-search");
             var Solutions = POP.Solve(1, cutoff);
             if (Solutions != null)
             {
@@ -149,7 +186,7 @@ namespace PlanningNamespace
             foreach (var actor in actors)
             {
                 var superordinateTypes = GetSuperOrdinateTypes(actor.tag);
-                objects.Add(new Obj(actor.name, actor.tag, superordinateTypes) as IObject);
+                objects.Add(new Obj(actor.name, actor.tag) as IObject);
             }
             return objects;
         }

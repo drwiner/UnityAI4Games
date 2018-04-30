@@ -96,6 +96,7 @@ namespace PlanningNamespace
                 var pred2 = ProcessStringItem(string.Format("adjacent {1} {0}", edge.S.name, edge.T.name));
                 initialPredicateList.Add(pred2 as IPredicate);
                 Debug.Log(pred.ToString());
+                Debug.Log(pred2.ToString());
             }
         }
 
@@ -114,6 +115,7 @@ namespace PlanningNamespace
             {
                 var go = GameObject.Find(item);
                 var newObj = new Term(item, go.name, go.tag);
+                //terms.Add(new Term(item, true) as ITerm);
                 terms.Add(newObj as ITerm);
             }
             var newPredicate = new Predicate(predName, terms, signage);
