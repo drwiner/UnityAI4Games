@@ -1,5 +1,4 @@
-﻿
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
@@ -7,6 +6,7 @@ using UnityEngine.Timeline;
 using UnityEngine.Playables;
 using System;
 using SteeringNamespace;
+using TimelineClipsNamespace;
 
 namespace PlanningNamespace
 {
@@ -18,7 +18,7 @@ namespace PlanningNamespace
         // Timeline Fields
         public PlayableDirector playableDirector;
         public TimelineAsset executeTimeline;
-        public TrackAsset steerTrack, lerpTrack;
+        public TrackAsset steerTrack, lerpTrack, ctrack, attachTrack;
 
         public RunPlanner planner;
         public void Awake()
@@ -32,8 +32,9 @@ namespace PlanningNamespace
         {
             if (execute)
             {
-                Execute();
                 execute = false;
+                Execute();
+                
             }
         }
 
@@ -42,10 +43,13 @@ namespace PlanningNamespace
             executeTimeline = (TimelineAsset)ScriptableObject.CreateInstance("TimelineAsset");
             steerTrack = executeTimeline.CreateTrack<PlayableTrack>(null, "steerTrack");
             lerpTrack = executeTimeline.CreateTrack<PlayableTrack>(null, "lerpTrack");
+            attachTrack = executeTimeline.CreateTrack<PlayableTrack>(null, "attachTrack");
+            ctrack = executeTimeline.CreateTrack<ControlTrack>(null, "control_track");
 
             execute = false;
             var planStringList = planner.PlanSteps;
-            var startTime = 0;
+            double startTime = 0;
+            double accumulatedTime = 0;
             char[] charsToTrim = {'(', ')' };
             foreach (var step in planStringList)
             {
@@ -62,7 +66,8 @@ namespace PlanningNamespace
                 var stepItems = stepPart.Split(' ');
 
                 // Find Action
-                var action = GameObject.Find(stepItems.First()).GetComponent<UnityActionOperator>();
+                var goWithAction = GameObject.Find(stepItems.First());
+                var action = goWithAction.GetComponent<UnityActionOperator>();
                 var terms = new List<GameObject>();
                 foreach (var term in stepItems.Skip(1))
                 {
@@ -71,25 +76,71 @@ namespace PlanningNamespace
 
                 // Follow Unity Instructions
                 var instructions = action.UnityInstructions;
-                var st = (double)startTime;
+
+
+                accumulatedTime = 0;
                 foreach (var instruction in instructions)
                 {
-                    ProcessInstruction(instruction, terms, st, 2);
+                    ProcessInstruction(goWithAction, instruction, terms, startTime + accumulatedTime, 0.5);
+                    accumulatedTime += .5;
                 }
-                startTime += 2;
+                startTime = startTime + accumulatedTime;
             }
             playableDirector.playableAsset = executeTimeline;
             playableDirector.Play(executeTimeline);
         }
 
-        public void ProcessInstruction(string instruction, List<GameObject> terms, double startTime, double duration)
+
+        public void ProcessInstruction(GameObject goWithAction, string instruction, List<GameObject> terms, double startTime, double duration)
         {
             var instructionParts = instruction.Split(' ');
             var instructionType = instructionParts[0];
 
-            
-            
             var CI = new ClipInfo(this.playableDirector, startTime, duration, instruction);
+
+            if (instructionType.Equals("play"))
+            {
+                // implies only 1 argument, unless refactored later
+                var agent = terms[Int32.Parse(instructionParts[1])];
+
+                // Clones action and sets binding
+                var goClone = SetAgentToGenericAction(goWithAction, agent);
+                var controlTrackClip = ctrack.CreateDefaultClip();
+                CI.display = string.Format("playing timeline {0}", goWithAction.name);
+                AnimateClip(controlTrackClip, goClone, CI);
+            }
+
+            if (instructionType.Equals("attach"))
+            {
+                var parent = terms[Int32.Parse(instructionParts[1])];
+                var child = terms[Int32.Parse(instructionParts[2])];
+
+                var attachClip = attachTrack.CreateClip<AttachToParent>();
+                attachClip.start = CI.start;
+                attachClip.duration = CI.duration;
+                attachClip.displayName = string.Format("attach parent={0} child={1}", parent.name, child.name);
+                AttachToParent aClip = attachClip.asset as AttachToParent;
+                AttachBind(aClip, parent, child);
+            }
+
+            if (instructionType.Equals("transform"))
+            {
+                // parse 5 argument instructions
+                var agent = terms[Int32.Parse(instructionParts[1])];
+                var origin = terms[Int32.Parse(instructionParts[2])];
+                var originHeight = float.Parse(instructionParts[3]);
+                var destination = terms[Int32.Parse(instructionParts[4])];
+                var destinationHeight = float.Parse(instructionParts[5]);
+
+                // Creating new transforms with custom heights
+                var originTransform = new GameObject();
+                originTransform.transform.position = new Vector3(origin.transform.position.x, destinationHeight, origin.transform.position.z);
+                var destinationTransform = new GameObject();
+                destinationTransform.transform.position = new Vector3(destination.transform.position.x, destinationHeight, destination.transform.position.z);
+                //destinationTransform.transform.localScale = agent.transform.localScale;
+                SimpleLerpClip(agent, originTransform.transform, destinationTransform.transform, CI);
+                //SimpleToLerpClip(agent, destinationTransform.transform, CI);
+            }
 
             if (instructionType.Equals("steer"))
             {
@@ -109,6 +160,7 @@ namespace PlanningNamespace
                 // arg 1 is agent, arg 2 is source, arg 3 is destination
                 SteerClip(agent, steerStart, steerFinish, true, true, true, CI);
             }
+
 
             //if (instructionType.Equals("scale"))
             //{
@@ -155,22 +207,68 @@ namespace PlanningNamespace
 
         }
 
-
-        public void TransformBind(LerpToMoveObjectAsset tpObj, GameObject obj_to_move, Trans end_pos)
+        public GameObject SetAgentToGenericAction(GameObject actionToAnimate, GameObject animatingObject)
         {
-            var GO = new GameObject();
-            GO.transform.position = end_pos.position;
-            GO.transform.rotation = end_pos.rotation;
-            GO.transform.localScale = end_pos.localScale;
+            GameObject animTimelineObject = GameObject.Instantiate(actionToAnimate);
+            var director01 = animTimelineObject.GetComponent<PlayableDirector>();
+            var timeline01 = director01.playableAsset as TimelineAsset;
+            var anim01 = animatingObject.GetComponent<Animator>();
+            anim01.applyRootMotion = actionToAnimate.GetComponent<Animator>().applyRootMotion;
+            foreach (var track in timeline01.GetOutputTracks())
+            {
+                var animTrack = track as AnimationTrack;
+                if (animTrack == null)
+                    continue;
+                var binding = director01.GetGenericBinding(animTrack);
+                if (binding == null)
+                    continue;
+
+                director01.SetGenericBinding(animTrack, anim01);
+            }
+            return animTimelineObject;
+        }
+
+
+        public void TransformToBind(LerpToMoveObjectAsset tpObj, GameObject obj_to_move, Transform end_pos)
+        {
+
             tpObj.ObjectToMove.exposedName = UnityEditor.GUID.Generate().ToString();
             tpObj.LerpMoveTo.exposedName = UnityEditor.GUID.Generate().ToString();
             playableDirector.SetReferenceValue(tpObj.ObjectToMove.exposedName, obj_to_move);
-            playableDirector.SetReferenceValue(tpObj.LerpMoveTo.exposedName, GO.transform);
+            playableDirector.SetReferenceValue(tpObj.LerpMoveTo.exposedName, end_pos);
         }
+
+        public void AttachBind(AttachToParent atpObj, GameObject parent, GameObject child)
+        {
+            atpObj.Parent.exposedName = UnityEditor.GUID.Generate().ToString();
+            atpObj.Child.exposedName = UnityEditor.GUID.Generate().ToString();
+            playableDirector.SetReferenceValue(atpObj.Parent.exposedName, parent);
+            playableDirector.SetReferenceValue(atpObj.Child.exposedName, child);
+        }
+
+        public void TransformBind(LerpMoveObjectAsset tpObj, GameObject obj_to_move, Transform start_pos, Transform end_pos)
+        {
+            tpObj.ObjectToMove.exposedName = UnityEditor.GUID.Generate().ToString();
+            tpObj.LerpMoveTo.exposedName = UnityEditor.GUID.Generate().ToString();
+            tpObj.LerpMoveFrom.exposedName = UnityEditor.GUID.Generate().ToString();
+            playableDirector.SetReferenceValue(tpObj.ObjectToMove.exposedName, obj_to_move);
+            playableDirector.SetReferenceValue(tpObj.LerpMoveTo.exposedName, end_pos);
+            playableDirector.SetReferenceValue(tpObj.LerpMoveFrom.exposedName, start_pos);
+        }
+
         public void AnimateBind(ControlPlayableAsset cpa, GameObject ato)
         {
             cpa.sourceGameObject.exposedName = UnityEditor.GUID.Generate().ToString();
             playableDirector.SetReferenceValue(cpa.sourceGameObject.exposedName, ato);
+        }
+
+        public void AnimateClip(TimelineClip cpa, GameObject ato, ClipInfo CI)
+        {
+            cpa.start = CI.start;
+            cpa.duration = CI.duration;
+            cpa.displayName = CI.display;
+            var controlAnim = cpa.asset as ControlPlayableAsset;
+            AnimateBind(controlAnim, ato);
         }
 
         public void SteerBind(SteeringAsset sa, GameObject boid, Vector3 startSteer, Vector3 endSteer, bool depart, bool arrive, bool isMaster)
@@ -184,15 +282,24 @@ namespace PlanningNamespace
             playableDirector.SetReferenceValue(sa.Boid.exposedName, boid);
         }
 
-        public void SimpleLerpClip(GameObject agent, Trans goalPos, ClipInfo CI)
+        public void SimpleToLerpClip(GameObject agent, Transform goalPos, ClipInfo CI)
         {
             var lerpClip = lerpTrack.CreateClip<LerpToMoveObjectAsset>();
-
             lerpClip.start = CI.start;
             lerpClip.duration = CI.duration;
+            lerpClip.displayName = string.Format("SimpleLerp {0}", goalPos.name);
             LerpToMoveObjectAsset lerp_clip = lerpClip.asset as LerpToMoveObjectAsset;
+            TransformToBind(lerp_clip, agent, goalPos);
+        }
 
-            TransformBind(lerp_clip, agent, goalPos);
+        public void SimpleLerpClip(GameObject agent, Transform startPos, Transform goalPos, ClipInfo CI)
+        {
+            var lerpClip = lerpTrack.CreateClip<LerpMoveObjectAsset>();
+            lerpClip.start = CI.start;
+            lerpClip.duration = CI.duration;
+            lerpClip.displayName = string.Format("SimpleLerp {0}-{1}", startPos.name, goalPos.name);
+            LerpMoveObjectAsset lerp_clip = lerpClip.asset as LerpMoveObjectAsset;
+            TransformBind(lerp_clip, agent, startPos, goalPos);
         }
 
         public void SteerClip(GameObject go, Vector3 startPos, Vector3 goalPos, bool depart, bool arrival, bool isMaster, ClipInfo CI)
@@ -204,6 +311,7 @@ namespace PlanningNamespace
             SteeringAsset steer_clip = steerClip.asset as SteeringAsset;
             SteerBind(steer_clip, go, startPos, goalPos, depart, arrival, isMaster);
         }
+
 
         public static GameObject MakeCustomizedTransform(Vector3 pos, float orientation)
         {

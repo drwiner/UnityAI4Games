@@ -67,6 +67,10 @@ namespace SteeringNamespace
 
         public void InitiateExternally()
         {
+            // Don't do this if it's already been done before.
+            if (initiatedExternally)
+                return;
+
             PD = GameObject.FindGameObjectWithTag("ExecuteTimeline").GetComponent<PlayableDirector>();
             SP = GetComponent<SteeringParams>();
             KinematicBody = GetComponent<Kinematic>();
