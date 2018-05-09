@@ -96,5 +96,7 @@ public class SteeringPlayable : PlayableBehaviour
             _originalPosition = _gameObject.transform.position;
             _originalRotation = _gameObject.transform.rotation;
         }
+
+        _Controller.steering = false;
     }
 }

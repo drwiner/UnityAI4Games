@@ -8,7 +8,6 @@ namespace TimelineClipsNamespace
     {
         private GameObject _parent;
         private GameObject _child;
-        private Transform OriginalParent;
 
         public void Initialize(GameObject parent, GameObject child)
         {
@@ -26,8 +25,40 @@ namespace TimelineClipsNamespace
 
         public override void OnBehaviourPlay(Playable playable, FrameData info)
         {
-            OriginalParent = _child.transform.parent;
             _child.transform.parent = _parent.transform;
+        }
+        public override void OnBehaviourPause(Playable playable, FrameData info)
+        {
+            if (info.evaluationType == FrameData.EvaluationType.Playback)
+            {
+                // Instead, keep an internal reference on game object of original parent transform.
+                //_child.transform.parent = OriginalParent;
+            }
+        }
+    }
+
+    public class DettachToParentPlayable : PlayableBehaviour
+    {
+        private GameObject _child;
+        private Transform defaultParent;
+
+        public void Initialize(GameObject child)
+        {
+            _child = child;
+            defaultParent = _child.GetComponent<DefaultAttributes>().defaultParent;
+        }
+
+        public override void ProcessFrame(Playable playable, FrameData info, object playerData)
+        {
+            if (playable.GetTime() <= 0 || _child == null || defaultParent == null)
+                return;
+
+            _child.transform.parent = defaultParent;
+        }
+
+        public override void OnBehaviourPlay(Playable playable, FrameData info)
+        {
+            _child.transform.parent = defaultParent;
         }
         public override void OnBehaviourPause(Playable playable, FrameData info)
         {

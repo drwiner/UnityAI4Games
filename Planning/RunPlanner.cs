@@ -16,25 +16,55 @@ namespace PlanningNamespace
     public class RunPlanner : MonoBehaviour
     {
 
+        public bool makePlan;
+        public bool savePlan;
+        public int retrievePlan;
         public bool getPlan;
 
         public List<string> PlanSteps;
 
         private List<string> GroundSteps;
+        private SavedPlans SavedPlansComponent;
 
         public void Awake()
         {
+            makePlan = false;
+            savePlan = false;
             getPlan = false;
+            retrievePlan = 0;
+            SavedPlansComponent = this.gameObject.GetComponent<SavedPlans>();
         }
 
         // Update is called once per frame
         void Update()
         {
+            if (makePlan)
+            {
+                makePlan = false;
+                PrepareAndRun();
+            }
+
+            if (savePlan)
+            {
+                savePlan = false;
+                if (SavedPlansComponent == null) 
+                    SavedPlansComponent = this.gameObject.GetComponent<SavedPlans>();
+
+                SavedPlansComponent.AddPlan(PlanSteps);
+            }
             if (getPlan)
             {
                 getPlan = false;
-                PrepareAndRun();
+                if (SavedPlansComponent == null)
+                    SavedPlansComponent = this.gameObject.GetComponent<SavedPlans>();
+
+                if (retrievePlan <= SavedPlansComponent.Saved.Count() - 1)
+                {
+                    PlanSteps = SavedPlansComponent.Retrieve(retrievePlan);
+                }
             }
+
+            
         }
 
         public void PrepareAndRun()

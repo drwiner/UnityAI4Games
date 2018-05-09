@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using TimelineClipsNamespace;
 using UnityEngine;
 using UnityEngine.Playables;
 
@@ -23,6 +24,7 @@ namespace SteeringNamespace
 
         // bool switches
         public bool steering = false;
+        public bool orienting = false;
         public bool playingClip = false;
         private bool initiatedExternally = false;
 
@@ -126,9 +128,63 @@ namespace SteeringNamespace
 
         }
 
+        public void OrientAlign()
+        {
+            // Get the vector to the target to determine target Orientation
+            var diff = currentGoal - transform.position;
+            diff = diff.normalized;
+            float targetOrientation;
+            if (diff.magnitude > 0f)
+            {
+                targetOrientation = Mathf.Atan2(-diff.z, diff.x);
+            }
+            else
+            {
+                targetOrientation = KinematicBody.getOrientation();
+            }
+
+
+            // Calculate the needed rotation to reach the target;
+            var rotation = targetOrientation - KinematicBody.getOrientation();
+            rotation = Kinematic.mapToRange(rotation);
+            var rotationSize = Mathf.Abs(rotation);
+
+            if (rotationSize < angularGoalRadius)
+            {
+                torque = 0f;
+                tiltAmountSideways = 0f;
+                return;
+            }
+
+            float targetRotation;
+            // if we're outside the slow Radius
+            if (rotationSize > angularSlowRadius)
+            {
+                targetRotation = SP.MAXROTATION;
+            }
+            else
+            {
+                targetRotation = SP.MAXROTATION * rotationSize / slowRadius;
+            }
+
+            // Final target rotation combines speed (already in variable) with rotation direction
+            targetRotation = targetRotation * rotation / rotationSize;
+
+            torque = targetRotation - KinematicBody.getRotation();
+            torque = torque / alignTime;
+
+            var angularAcceleration = Mathf.Abs(torque);
+
+            if (angularAcceleration > SP.MAXANGULAR)
+            {
+                torque = torque / angularAcceleration;
+                torque = torque * SP.MAXANGULAR;
+            }
+        }
+
         public void Align()
         {
-
+            
             var targetOrientation = KinematicBody.getNewOrientation(currentGoal - transform.position);
             //rotation = goal.eulerAngles;
             var rotation = targetOrientation - KinematicBody.getOrientation();
@@ -204,6 +260,13 @@ namespace SteeringNamespace
             playingClip = true;
         }
 
+        public void Orient(Vector3 target)
+        {
+            currentGoal = target;
+            playingClip = true;
+            orienting = true;
+        }
+
         public void InformMasterIsPlaying(int whichList, bool isPlaying)
         {
             LockedList[whichList] = isPlaying;
@@ -249,6 +312,7 @@ namespace SteeringNamespace
             return whichList;
         }
 
+
         //public void RegisterPlayableToList
 
         // Update is called once per frame
@@ -257,10 +321,12 @@ namespace SteeringNamespace
             if (!initiatedExternally)
             {
                 steering = false;
+                orienting = false;
                 //throw new System.Exception();
             }
             if (steering)
             {
+                orienting = false;
                 //Debug.Log(gameObject.name + " " + transform.position);
                 
                 //Debug.Log(transform.name + force.ToString());
@@ -272,14 +338,40 @@ namespace SteeringNamespace
                     alignTask();
                     //Debug.Log("aligning " + transform.name);
                 }
+                else
+                {
+                    steering = false;
+                    torque = 0f;
+                }
 
                 kso = KinematicBody.updateSteering(new DynoSteering(force, torque), Time.deltaTime);
                 transform.position = new Vector3(kso.position.x, transform.position.y, kso.position.z);
 
                 transform.rotation = Quaternion.Euler(0f, kso.orientation * Mathf.Rad2Deg, 0f);
+
+                // Gets set to true for each frame its in clip
                 playingClip = false;
 
-               
+            }
+
+            if (orienting)
+            {
+                steering = false;
+                if (playingClip)
+                {
+                    OrientAlign();
+                    //Debug.Log("Orienting");
+                }
+                else
+                {
+                    torque = 0f;
+                }
+
+                kso = KinematicBody.updateSteering(new DynoSteering(Vector3.zero, torque), Time.deltaTime);
+                transform.rotation = Quaternion.Euler(0f, kso.orientation * Mathf.Rad2Deg, 0f);
+
+                // Gets set to true for each frame its in clip
+                playingClip = false;
             }
         }
     }

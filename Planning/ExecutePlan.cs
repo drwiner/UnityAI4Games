@@ -51,6 +51,7 @@ namespace PlanningNamespace
             double startTime = 0;
             double accumulatedTime = 0;
             char[] charsToTrim = {'(', ')' };
+            var CIList = new List<ClipInfo>();
             foreach (var step in planStringList)
             {
                 var stepPart = step.Trim(charsToTrim).Split('-').First();
@@ -77,21 +78,28 @@ namespace PlanningNamespace
                 // Follow Unity Instructions
                 var instructions = action.UnityInstructions;
 
-
+                
                 accumulatedTime = 0;
                 foreach (var instruction in instructions)
                 {
-                    ProcessInstruction(goWithAction, instruction, terms, startTime + accumulatedTime, 0.5);
-                    accumulatedTime += .5;
+                    var thisCI = ProcessInstruction(goWithAction, instruction, terms, startTime + accumulatedTime, 1);
+                    CIList.Add(thisCI);
+                    accumulatedTime += 1;
                 }
                 startTime = startTime + accumulatedTime;
             }
+            //CIList[CIList.Count() - 1].duration = 1000;
+            //thisCI.duration = 1000;
+            //var CI = new ClipInfo(playableDirector, startTime, 1000, "filler");
+            //var ctrackClip = ctrack.CreateDefaultClip();
+            //AnimateClip(ctrackClip, new GameObject(), CI);
+           
             playableDirector.playableAsset = executeTimeline;
             playableDirector.Play(executeTimeline);
         }
 
 
-        public void ProcessInstruction(GameObject goWithAction, string instruction, List<GameObject> terms, double startTime, double duration)
+        public ClipInfo ProcessInstruction(GameObject goWithAction, string instruction, List<GameObject> terms, double startTime, double duration)
         {
             var instructionParts = instruction.Split(' ');
             var instructionType = instructionParts[0];
@@ -123,6 +131,18 @@ namespace PlanningNamespace
                 AttachBind(aClip, parent, child);
             }
 
+            if (instructionType.Equals("dettach"))
+            {
+                var child = terms[Int32.Parse(instructionParts[1])];
+
+                var dettachClip = attachTrack.CreateClip<DettachToParent>();
+                dettachClip.start = CI.start;
+                dettachClip.duration = CI.duration;
+                dettachClip.displayName = string.Format("dettach child={0}", child.name);
+                DettachToParent aClip = dettachClip.asset as DettachToParent;
+                DettachBind(aClip, child);
+            }
+
             if (instructionType.Equals("transform"))
             {
                 // parse 5 argument instructions
@@ -134,12 +154,11 @@ namespace PlanningNamespace
 
                 // Creating new transforms with custom heights
                 var originTransform = new GameObject();
-                originTransform.transform.position = new Vector3(origin.transform.position.x, destinationHeight, origin.transform.position.z);
+                originTransform.transform.position = new Vector3(origin.transform.position.x, originHeight, origin.transform.position.z);
                 var destinationTransform = new GameObject();
                 destinationTransform.transform.position = new Vector3(destination.transform.position.x, destinationHeight, destination.transform.position.z);
-                //destinationTransform.transform.localScale = agent.transform.localScale;
+
                 SimpleLerpClip(agent, originTransform.transform, destinationTransform.transform, CI);
-                //SimpleToLerpClip(agent, destinationTransform.transform, CI);
             }
 
             if (instructionType.Equals("steer"))
@@ -159,6 +178,18 @@ namespace PlanningNamespace
                 var steerFinish = new Vector3(sink.transform.position.x, agent.transform.position.y, sink.transform.position.z);
                 // arg 1 is agent, arg 2 is source, arg 3 is destination
                 SteerClip(agent, steerStart, steerFinish, true, true, true, CI);
+            }
+
+            if (instructionType.Equals("orient"))
+            {
+                var agent = terms[Int32.Parse(instructionParts[1])];
+                var destination = terms[Int32.Parse(instructionParts[2])];
+
+                // Initiate the Steering capability of the agent (if not already set; fine if redundant)
+                var DS_TC = agent.GetComponent<DynoBehavior_TimelineControl>();
+                DS_TC.InitiateExternally();
+               // var test = destination.transform.position + destination.transform.localPosition;
+                OrientClip(agent, destination.transform.position, CI);
             }
 
 
@@ -205,6 +236,8 @@ namespace PlanningNamespace
             //    throw new System.Exception();
             //}
 
+            return CI;
+
         }
 
         public GameObject SetAgentToGenericAction(GameObject actionToAnimate, GameObject animatingObject)
@@ -246,6 +279,12 @@ namespace PlanningNamespace
             playableDirector.SetReferenceValue(atpObj.Child.exposedName, child);
         }
 
+        public void DettachBind(DettachToParent dtpObj, GameObject child)
+        {
+            dtpObj.Child.exposedName = UnityEditor.GUID.Generate().ToString();
+            playableDirector.SetReferenceValue(dtpObj.Child.exposedName, child);
+        }
+
         public void TransformBind(LerpMoveObjectAsset tpObj, GameObject obj_to_move, Transform start_pos, Transform end_pos)
         {
             tpObj.ObjectToMove.exposedName = UnityEditor.GUID.Generate().ToString();
@@ -268,6 +307,7 @@ namespace PlanningNamespace
             cpa.duration = CI.duration;
             cpa.displayName = CI.display;
             var controlAnim = cpa.asset as ControlPlayableAsset;
+            //controlAnim.postPlayback = ActivationControlPlayable.PostPlaybackState.Active;
             AnimateBind(controlAnim, ato);
         }
 
@@ -280,6 +320,13 @@ namespace PlanningNamespace
             sa.endPos = endSteer;
             sa.master = isMaster;
             playableDirector.SetReferenceValue(sa.Boid.exposedName, boid);
+        }
+
+        public void OrientBind(OrientToObjectAsset oa, GameObject boid, Vector3 endOrient)
+        {
+            oa.ObjectToMove.exposedName = UnityEditor.GUID.Generate().ToString();
+            oa.endPos = endOrient;
+            playableDirector.SetReferenceValue(oa.ObjectToMove.exposedName, boid);
         }
 
         public void SimpleToLerpClip(GameObject agent, Transform goalPos, ClipInfo CI)
@@ -310,6 +357,16 @@ namespace PlanningNamespace
             steerClip.displayName = CI.display;
             SteeringAsset steer_clip = steerClip.asset as SteeringAsset;
             SteerBind(steer_clip, go, startPos, goalPos, depart, arrival, isMaster);
+        }
+
+        public void OrientClip(GameObject go, Vector3 goalPos, ClipInfo CI)
+        {
+            var orientClip = steerTrack.CreateClip<OrientToObjectAsset>();
+            orientClip.start = CI.start;
+            orientClip.duration = CI.duration;
+            orientClip.displayName = CI.display;
+            OrientToObjectAsset orient_clip = orientClip.asset as OrientToObjectAsset;
+            OrientBind(orient_clip, go, goalPos);
         }
 
 
