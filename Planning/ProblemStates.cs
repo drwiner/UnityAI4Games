@@ -45,6 +45,9 @@ namespace PlanningNamespace
 
         public void SetInitialState()
         {
+            var actors = GameObject.FindGameObjectWithTag("ActorHost");
+            actors.GetComponent<ActorList>().RecollectChildren();
+
             ReadProblem();
             foreach( var initPredicate in initialPredicateList)
             {
@@ -54,6 +57,7 @@ namespace PlanningNamespace
                     // arg 1 is location name
                     var locationPosition = GameObject.Find(initPredicate.Terms[1].Constant).transform.position;
                     var item = GameObject.Find(initPredicate.Terms[0].Constant);
+                    
                     var newPosition = new Vector3(locationPosition.x, item.transform.position.y, locationPosition.z);
                     item.transform.position = newPosition;
                 }
@@ -100,7 +104,7 @@ namespace PlanningNamespace
             }
         }
 
-        public Predicate ProcessStringItem(string stringItem)
+        public static Predicate ProcessStringItem(string stringItem)
         {
             var signage = true;
             var stringArray = stringItem.Split(' ');

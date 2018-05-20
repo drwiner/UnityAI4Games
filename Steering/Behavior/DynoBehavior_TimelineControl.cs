@@ -7,7 +7,7 @@ using UnityEngine.Playables;
 
 namespace SteeringNamespace
 {
-
+    [ExecuteInEditMode]
     public class DynoBehavior_TimelineControl : MonoBehaviour
     {
  

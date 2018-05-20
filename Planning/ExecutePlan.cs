@@ -98,6 +98,37 @@ namespace PlanningNamespace
             playableDirector.Play(executeTimeline);
         }
 
+        public void InstantiateExternally()
+        {
+            Debug.Log("Running in Edit Mode");
+            executeTimeline = (TimelineAsset)ScriptableObject.CreateInstance("TimelineAsset");
+            steerTrack = executeTimeline.CreateTrack<PlayableTrack>(null, "steerTrack");
+            lerpTrack = executeTimeline.CreateTrack<PlayableTrack>(null, "lerpTrack");
+            attachTrack = executeTimeline.CreateTrack<PlayableTrack>(null, "attachTrack");
+            ctrack = executeTimeline.CreateTrack<ControlTrack>(null, "control_track");
+        }
+
+        public void ResetExternally()
+        {
+            var tracksToDelete = executeTimeline.GetRootTracks();
+            foreach (var track in tracksToDelete)
+            {
+                executeTimeline.DeleteTrack(track);
+            }
+
+            executeTimeline = null;
+            steerTrack = null;
+            lerpTrack = null;
+            attachTrack = null;
+            ctrack = null;
+        }
+
+        public void ExecuteExternally()
+        {
+            Debug.Log("Executing in Edit Mode");
+            playableDirector.playableAsset = executeTimeline;
+            playableDirector.Play(executeTimeline);
+        }
 
         public ClipInfo ProcessInstruction(GameObject goWithAction, string instruction, List<GameObject> terms, double startTime, double duration)
         {
@@ -188,7 +219,7 @@ namespace PlanningNamespace
                 // Initiate the Steering capability of the agent (if not already set; fine if redundant)
                 var DS_TC = agent.GetComponent<DynoBehavior_TimelineControl>();
                 DS_TC.InitiateExternally();
-               // var test = destination.transform.position + destination.transform.localPosition;
+                // var test = destination.transform.position + destination.transform.localPosition;
                 OrientClip(agent, destination.transform.position, CI);
             }
 
@@ -239,6 +270,67 @@ namespace PlanningNamespace
             return CI;
 
         }
+
+        //public void ExecuteSpecific(PlayableDirector pd, )
+        //{
+        //    executeTimeline = (TimelineAsset)ScriptableObject.CreateInstance("TimelineAsset");
+        //    steerTrack = executeTimeline.CreateTrack<PlayableTrack>(null, "steerTrack");
+        //    lerpTrack = executeTimeline.CreateTrack<PlayableTrack>(null, "lerpTrack");
+        //    attachTrack = executeTimeline.CreateTrack<PlayableTrack>(null, "attachTrack");
+        //    ctrack = executeTimeline.CreateTrack<ControlTrack>(null, "control_track");
+
+        //    execute = false;
+        //    var planStringList = planner.PlanSteps;
+        //    double startTime = 0;
+        //    double accumulatedTime = 0;
+        //    char[] charsToTrim = { '(', ')' };
+        //    var CIList = new List<ClipInfo>();
+        //    foreach (var step in planStringList)
+        //    {
+        //        var stepPart = step.Trim(charsToTrim).Split('-').First();
+        //        if (stepPart.EndsWith(")"))
+        //        {
+        //            stepPart = stepPart.TrimEnd(charsToTrim);
+        //        }
+        //        if (stepPart.Equals("initial") || stepPart.Equals("goal"))
+        //        {
+        //            continue;
+        //        }
+
+        //        var stepItems = stepPart.Split(' ');
+
+        //        // Find Action
+        //        var goWithAction = GameObject.Find(stepItems.First());
+        //        var action = goWithAction.GetComponent<UnityActionOperator>();
+        //        var terms = new List<GameObject>();
+        //        foreach (var term in stepItems.Skip(1))
+        //        {
+        //            terms.Add(GameObject.Find(term));
+        //        }
+
+        //        // Follow Unity Instructions
+        //        var instructions = action.UnityInstructions;
+
+
+        //        accumulatedTime = 0;
+        //        foreach (var instruction in instructions)
+        //        {
+        //            var thisCI = ProcessInstruction(goWithAction, instruction, terms, startTime + accumulatedTime, 1);
+        //            CIList.Add(thisCI);
+        //            accumulatedTime += 1;
+        //        }
+        //        startTime = startTime + accumulatedTime;
+        //    }
+
+        //    //CIList[CIList.Count() - 1].duration = 1000;
+        //    //thisCI.duration = 1000;
+        //    //var CI = new ClipInfo(playableDirector, startTime, 1000, "filler");
+        //    //var ctrackClip = ctrack.CreateDefaultClip();
+        //    //AnimateClip(ctrackClip, new GameObject(), CI);
+
+        //    playableDirector.playableAsset = executeTimeline;
+        //    playableDirector.Play(executeTimeline);
+        //}
 
         public GameObject SetAgentToGenericAction(GameObject actionToAnimate, GameObject animatingObject)
         {

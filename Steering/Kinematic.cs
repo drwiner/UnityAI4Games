@@ -36,6 +36,15 @@ namespace SteeringNamespace
         // Update is called once per frame
         public KinematicSteeringOutput updateSteering(DynoSteering ds, float time)
         {
+            if (sp == null)
+            {
+                sp = GetComponent<SteeringParams>();
+
+                position = this.transform.position;
+                velc = new Vector3(0f, 0f, 0f);
+                rotation = 0f;
+                orientation = 0f;
+            }
 
             steering = new KinematicSteeringOutput();
 
