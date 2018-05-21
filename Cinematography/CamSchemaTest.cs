@@ -9,6 +9,7 @@ using BoltFreezer.PlanTools;
 using BoltFreezer.Interfaces;
 using System.Linq;
 using System;
+using Cinemachine;
 
 [ExecuteInEditMode]
 public class CamSchemaTest : MonoBehaviour {
@@ -20,9 +21,15 @@ public class CamSchemaTest : MonoBehaviour {
     public GameObject action;
     private UnityActionOperator unityAction;
     public List<GameObject> terms;
+
+    public GameObject action2;
+    private UnityActionOperator unityAction2;
+    public List<GameObject> terms2;
+
     public bool executeTest = false;
 
     public ExecutePlan fabExecutePlanScript;
+    public CamPlan discExecutePlanScript;
 
     public bool resetPlayableDirectors = false;
 
@@ -33,6 +40,10 @@ public class CamSchemaTest : MonoBehaviour {
         if (unityAction == null)
         {
             unityAction = action.GetComponent<UnityActionOperator>();
+        }
+        if (unityAction2 == null)
+        {
+            unityAction2 = action2.GetComponent<UnityActionOperator>();
         }
 
         if (checkConsistency)
@@ -60,7 +71,7 @@ public class CamSchemaTest : MonoBehaviour {
         {
             resetPlayableDirectors = false;
             fabExecutePlanScript.ResetExternally();
-            //fabExecutePlanScript = null;
+            discExecutePlanScript.ResetExternally();
         }
     }
 
@@ -73,7 +84,7 @@ public class CamSchemaTest : MonoBehaviour {
         for(int i = 0; i < actorHost.transform.childCount; i++)
         {
             var ithChild = actorHost.transform.GetChild(i);
-            if (!terms.Contains(ithChild.gameObject))
+            if (!terms.Contains(ithChild.gameObject) && !terms2.Contains(ithChild.gameObject))
             {
                 irrelevantActorStorage.Add(ithChild.gameObject);
                 ithChild.gameObject.SetActive(false);
@@ -81,7 +92,37 @@ public class CamSchemaTest : MonoBehaviour {
         }
 
         // set starting position of relevant objects
-        foreach(var precondition in unityAction.MutablePreconditions)
+        SetInitial(unityAction);
+
+        var discExecutePlanObject = GameObject.FindGameObjectWithTag("DiscourseTimeline");
+        discExecutePlanScript = discExecutePlanObject.GetComponent<CamPlan>();
+
+        var fabExecutePlanObject = GameObject.FindGameObjectWithTag("ExecuteTimeline");
+        fabExecutePlanScript = fabExecutePlanObject.GetComponent<ExecutePlan>();
+
+        // Instantiate Timeline Components
+        fabExecutePlanScript.InstantiateExternally();
+        // Create Action
+        InstantiateFabulaTimeline(fabExecutePlanScript);
+        // Start Execution
+        fabExecutePlanScript.ExecuteExternally();
+
+        // Test if camera shot is suitable for a transition to a next action.
+        discExecutePlanScript.InitiateExternally();
+        // reference cinemachine virtual cam
+        var cvc = camObject.GetComponent<CinemachineVirtualCamera>();
+        cvc.m_LookAt = terms[0].transform;
+        camObject.GetComponent<CinemachineCameraBody>().FocusTransform = terms[0].transform;
+        // create clip starting at 0 and lasting for arbitrary time
+        discExecutePlanScript.AddClip(cvc, fabExecutePlanObject.GetComponent<PlayableDirector>(), 0, 0, 10, camObject.name);
+        // Start Execution
+        discExecutePlanScript.ExecuteExternally();
+    }
+
+    public void SetInitial(UnityActionOperator ua)
+    {
+        // set starting position of relevant objects
+        foreach (var precondition in ua.MutablePreconditions)
         {
             Debug.Log(precondition);
             var predicate = PreconditionToPredicate(precondition);
@@ -101,40 +142,28 @@ public class CamSchemaTest : MonoBehaviour {
             }
 
         }
-
-        var discoursePlayableDirector = GameObject.FindGameObjectWithTag("DiscourseTimeline").GetComponent<PlayableDirector>();
-
-        var fabExecutePlanObject = GameObject.FindGameObjectWithTag("ExecuteTimeline");
-        fabExecutePlanScript = fabExecutePlanObject.GetComponent<ExecutePlan>();
-
-        fabExecutePlanScript.InstantiateExternally();
-        InstantiateFabulaTimeline(fabExecutePlanScript);
-        fabExecutePlanScript.ExecuteExternally();
-
-        //var fabulaPlayableDirector = fabExecutePlanObject.GetComponent<PlayableDirector>();
-
     }
 
+    // Sets up fabula timeline
     public void InstantiateFabulaTimeline(ExecutePlan executePlanScript)
     {
-
         double startTime = 0;
+        startTime = ProcessInstructionsForUnityAction(executePlanScript, action, unityAction, terms, startTime);
+        ProcessInstructionsForUnityAction(executePlanScript, action2, unityAction2, terms2, startTime);
+    }
+
+    public static double ProcessInstructionsForUnityAction(ExecutePlan ep, GameObject a, UnityActionOperator ua, List<GameObject> actionTerms, double startTime)
+    {
+        var instructions = ua.UnityInstructions;
+
         double accumulatedTime = 0;
-        char[] charsToTrim = { '(', ')' };
-        var CIList = new List<ClipInfo>();
-
-        // Follow Unity Instructions
-        var instructions = unityAction.UnityInstructions;
-
-        accumulatedTime = 0;
         foreach (var instruction in instructions)
         {
-            var thisCI = executePlanScript.ProcessInstruction(action, instruction, terms, startTime + accumulatedTime, 1);
-            CIList.Add(thisCI);
+            var thisCI = ep.ProcessInstruction(a, instruction, actionTerms, startTime + accumulatedTime, 1);
             accumulatedTime += 1;
         }
         startTime = startTime + accumulatedTime;
-
+        return startTime;
     }
 
 

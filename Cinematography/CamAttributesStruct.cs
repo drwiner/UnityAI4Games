@@ -11,12 +11,12 @@ namespace CameraNamespace
     {
         // Composition
         public string targetLocation;
-        public int targetOrientation;
+        public int targetOrientation = -1;
 
         // Cinematography
-        public FramingType scale;
-        public int hangle;
-        public int vangle;
+        public FramingType scale = FramingType.None;
+        public int hangle = -1;
+        public int vangle = -1;
 
         public void Set(FramingType _scale, string _tLoc, int _tOrient, int _hangle, int _vangle)
         {
