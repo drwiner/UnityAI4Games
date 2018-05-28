@@ -11,11 +11,13 @@ namespace TimelineClipsNamespace
     public class DiscoursePlayable : PlayableBehaviour
     {
         private CamSchema _schema;
+        private CamTargetSchema _tschema;
         private List<string> _constraints;
 
-        public void Initialize(CamSchema schema, List<string> constraints)
+        public void Initialize(CamSchema schema, CamTargetSchema tschema, List<string> constraints)
         {
             _schema = schema;
+            _tschema = tschema;
             _constraints = constraints;
         }
 

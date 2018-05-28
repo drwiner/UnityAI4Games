@@ -16,6 +16,8 @@ namespace PlanningNamespace
     public class RunPlanner : MonoBehaviour
     {
 
+        public GameObject UnityGroundActionFactory;
+
         public bool makePlan;
         public bool savePlan;
         public int retrievePlan;
@@ -23,7 +25,7 @@ namespace PlanningNamespace
 
         public List<string> PlanSteps;
 
-        private List<string> GroundSteps;
+       // private List<string> GroundSteps;
         private SavedPlans SavedPlansComponent;
 
         public void Awake()
@@ -69,7 +71,8 @@ namespace PlanningNamespace
 
         public void PrepareAndRun()
         {
-            var initPlan = PreparePlanner();
+            var UGAF = UnityGroundActionFactory.GetComponent<UnityGroundActionFactory>();
+            var initPlan = UGAF.PreparePlanner();
             Debug.Log("Planner and initial plan Prepared");
 
             // MW-Loc-Conf
@@ -93,86 +96,7 @@ namespace PlanningNamespace
             }
         }
 
-        public IPlan PreparePlanner()
-        {
-            Parser.path = "/";
-
-            // Update Domain Operators
-            var domainOperatorComponent = GameObject.FindGameObjectWithTag("ActionHost").GetComponent<DomainOperators>();
-            domainOperatorComponent.Reset();
-
-            // Read and Create Problem
-            var problem = CreateProblem(domainOperatorComponent.DomainOps);
-            problem.ToString();
-            GroundActionFactory.Reset();
-            CacheMaps.Reset();
-
-            // Create Domain
-            
-            var newOps = new List<IOperator>();
-            foreach (var domainOp in domainOperatorComponent.DomainOps)
-            {
-                newOps.Add(domainOp as IOperator);
-            }
-            var domain = new Domain("unityWorld", BoltFreezer.Enums.PlanType.PlanSpace, newOps);
-            domain.AddTypePair("SteeringAgent", "Agent");
-            domain.AddTypePair("Block", "Item");
-            domain.AddTypePair("", "SteeringAgent");
-            domain.AddTypePair("", "Block");
-            domain.AddTypePair("", "Location");
-
-            // Create Problem Freezer.
-            var PF = new ProblemFreezer("Unity", "", domain, problem);
-            // Create Initial Plan
-            var initPlan = PlanSpacePlanner.CreateInitialPlan(PF);
-
-            GroundActionFactory.PopulateGroundActions(domain, problem);
-
-            // Remove Irrelevant Actions (those which require an adjacent edge but which does not exist. In Refactoring--> make any static
-            Debug.Log("removing irrelevant actions");
-            GroundSteps = new List<string>();
-            var adjInitial = initPlan.Initial.Predicates.Where(state => state.Name.Equals("adjacent"));
-            var replacedActions = new List<IOperator>();
-            foreach (var ga in GroundActionFactory.GroundActions)
-            {
-                // If this action has a precondition with name adjacent this is not in initial state, then it's impossible. True ==> impossible. False ==> OK!
-                var isImpossible = ga.Preconditions.Where(pre => pre.Name.Equals("adjacent") && pre.Sign).Any(pre => !adjInitial.Contains(pre));
-                if (isImpossible)
-                    continue;
-                replacedActions.Add(ga);
-            }
-            GroundActionFactory.Reset();
-            GroundActionFactory.GroundActions = replacedActions;
-            GroundActionFactory.GroundLibrary = replacedActions.ToDictionary(item => item.ID, item => item);
-
-
-            CacheMaps.CacheLinks(GroundActionFactory.GroundActions);
-            CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, problem.Goal);
-
         
-            // Detect Statics
-            Debug.Log("Detecting Statics");
-            GroundActionFactory.DetectStatics(CacheMaps.CausalMap, CacheMaps.ThreatMap);
-
-
-
-          //  // Create Composites here. // Compose HTNs
-            //var CompositeMethods = BlockWorldHTNs.ReadCompositeOperators();
-            //Composite.ComposeHTNs(1, CompositeMethods);
-          //  // Only need to do this if you added composite methods
-           // Debug.Log("Caching maps");
-           // CacheMaps.Reset();
-           // CacheMaps.CacheLinks(GroundActionFactory.GroundActions);
-           // CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, initPlan.Goal.Predicates);
-
-            Debug.Log("Caching Heuristic costs");
-            CacheMaps.CacheAddReuseHeuristic(initPlan.Initial);
-
-            // Recreate Initial Plan
-            initPlan = PlanSpacePlanner.CreateInitialPlan(PF);
-
-            return initPlan;
-        }
 
         public IPlan Run(IPlan initPlan, ISearch SearchMethod, ISelection SelectMethod, float cutoff)
         {
@@ -190,55 +114,6 @@ namespace PlanningNamespace
             Debug.Log(string.Format("explored: {0}, expanded: {1}", POP.Open, POP.Expanded));
             return null;
         }
-
-        public Problem CreateProblem(List<Operator> DomainOps)
-        {
-            var ProblemHost = GameObject.FindGameObjectWithTag("Problem");
-            var problemComponent = ProblemHost.GetComponent<ProblemStates>();
-            problemComponent.ReadProblem();
-            var prob = new Problem("SteerProblem", "SteerProblem", "Unity", "", GetObjects(), problemComponent.initialPredicateList, problemComponent.goalPredicateList);
-            return prob;
-        }
-
-        public List<IObject> GetObjects()
-        {
-            var locationHost = GameObject.FindGameObjectWithTag("Locations");
-            var locations = Enumerable.Range(0, locationHost.transform.childCount).Select(i => locationHost.transform.GetChild(i));
-            var actorHost = GameObject.FindGameObjectWithTag("ActorHost");
-            var actors = Enumerable.Range(0, actorHost.transform.childCount).Select(i => actorHost.transform.GetChild(i));
-
-            // Calculate Objects
-            var objects = new List<IObject>();
-            foreach (var location in locations)
-            {
-                objects.Add(new Obj(location.name, "Location") as IObject);
-            }
-            foreach (var actor in actors)
-            {
-                var superordinateTypes = GetSuperOrdinateTypes(actor.tag);
-                objects.Add(new Obj(actor.name, actor.tag) as IObject);
-            }
-            return objects;
-        }
-
-        public List<string> GetSuperOrdinateTypes(string subtype)
-        {
-            var parentGo = GameObject.Find(subtype).transform;
-            
-            var superOrdinateTypes = new List<string>();
-            superOrdinateTypes.Add(subtype);
-            while (true)
-            {
-                parentGo = parentGo.parent;
-                var parentName = parentGo.name;
-                if (parentName.Equals("TypeHierarchy"))
-                {
-                    break;
-                }
-                superOrdinateTypes.Add(parentName);
-            }
-
-            return superOrdinateTypes;
-        }
+        
     }
 }

@@ -12,6 +12,7 @@ namespace TimelineClipsNamespace
     public class DiscourseAsset : PlayableAsset
     {
         public CamSchema camSchema;
+        public CamTargetSchema targetSchema;
         public List<string> Constraints;
 
         public override Playable CreatePlayable(PlayableGraph graph, GameObject owner)
@@ -21,7 +22,7 @@ namespace TimelineClipsNamespace
 
             //var schema = Schema.Resolve(playable.GetGraph().GetResolver());
 
-            discPlayable.Initialize(camSchema, Constraints);
+            discPlayable.Initialize(camSchema, targetSchema, Constraints);
             return playable;
         }
     }

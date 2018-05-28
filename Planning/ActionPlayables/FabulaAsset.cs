@@ -16,7 +16,9 @@ namespace TimelineClipsNamespace
         [SerializeField]
         public List<string> Constraints;
         [SerializeField]
-        public int agentOrient;
+        public int agentOrient = - 1;
+        [SerializeField]
+        public string location = "";
 
         public override Playable CreatePlayable(PlayableGraph graph, GameObject owner)
         {

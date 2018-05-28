@@ -121,5 +121,81 @@ namespace CameraNamespace
 
             return true;
         }
+
+        public CamSchema Clone()
+        {
+            return new CamSchema(scale, targetLocation, targetOrientation, hangle, vangle);
+        }
+    }
+
+    [Serializable]
+    public class CamTargetSchema
+    {
+        [SerializeField]
+        public int orient = -1;
+
+        [SerializeField]
+        public string location = "";
+
+        [SerializeField]
+        public List<ActionSeg> ActionSegs = new List<ActionSeg>();
+
+        public CamTargetSchema()
+        {
+
+        }
+
+        public CamTargetSchema(int _orient, string _location, List<ActionSeg> _actionSegs)
+        {
+            orient = _orient;
+            location = _location;
+            ActionSegs = _actionSegs;
+        }
+
+        public CamTargetSchema(int _orient, List<ActionSeg> _actionSegs)
+        {
+            orient = _orient;
+            ActionSegs = _actionSegs;
+        }
+
+        public CamTargetSchema(List<ActionSeg> _actionSegs)
+        {
+            ActionSegs = _actionSegs;
+        }
+
+        public CamTargetSchema Clone()
+        {
+            return new CamTargetSchema(orient, location, ActionSegs);
+        }
+    }
+
+    [Serializable]
+    public class ActionSeg
+    {
+        [SerializeField]
+        public string actionVarName = "";
+
+        [SerializeField]
+        public string targetVarName = "";
+
+        [SerializeField]
+        public double startPercent = 0;
+
+        [SerializeField]
+        public double endPercent = 1;
+
+        public ActionSeg(string actionvar, double start, double end)
+        {
+            actionVarName = actionvar;
+            startPercent = start;
+            endPercent = end;
+        }
+
+        public ActionSeg()
+        {
+            // No target specified. This just represents free space. 
+            // These should be inserted for each pair of targets that are consecutive but not contiguous.
+        }
+
     }
 }
