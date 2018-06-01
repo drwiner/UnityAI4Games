@@ -13,7 +13,7 @@ namespace CameraNamespace {
     public class CamGen : MonoBehaviour {
 
         // Needs access to problem and actions
-        private ProblemStates problemStates;
+        private UnityProblemCompiler problemStates;
         public List<UnityActionOperator> actions;
         private List<GameObject> actors;
         private TileGraph tileMap;
@@ -54,7 +54,7 @@ namespace CameraNamespace {
             FrameTypeList = new List<FramingType>() { FramingType.ExtremeLong, FramingType.Full, FramingType.Waist, FramingType.ExtremeCloseUp };
 
             // problem information may not be useful here
-            problemStates = GameObject.FindGameObjectWithTag("Problem").GetComponent<ProblemStates>();
+            problemStates = GameObject.FindGameObjectWithTag("Problem").GetComponent<UnityProblemCompiler>();
 
             // locations are the basic anchor for camera positioning
             tileMap = GameObject.FindGameObjectWithTag("Locations").GetComponent<TileGraph>();

@@ -10,7 +10,7 @@ using TimelineClipsNamespace;
 
 namespace PlanningNamespace
 {
-    public class ExecutePlan : MonoBehaviour
+    public class UnityPlanExecutor : MonoBehaviour
     {
 
         public bool execute = false;
@@ -20,10 +20,10 @@ namespace PlanningNamespace
         public TimelineAsset executeTimeline;
         public TrackAsset steerTrack, lerpTrack, ctrack, attachTrack;
 
-        public RunPlanner planner;
+        public UnityPlanningInterface planner;
         public void Awake()
         {
-            planner = GameObject.FindGameObjectWithTag("Planner").GetComponent<RunPlanner>();
+            planner = GameObject.FindGameObjectWithTag("Planner").GetComponent<UnityPlanningInterface>();
             playableDirector = GetComponent<PlayableDirector>();
             playableDirector.Stop();
         }

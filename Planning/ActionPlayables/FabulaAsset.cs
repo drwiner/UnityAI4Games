@@ -12,9 +12,9 @@ namespace TimelineClipsNamespace
     public class FabulaAsset : PlayableAsset
     {
         [SerializeField]
-        public UnityActionOperator Schema;
+        public ExposedReference<UnityActionOperator> Schema;
         [SerializeField]
-        public List<string> Constraints;
+        public List<string> Constraints = new List<string>();
         [SerializeField]
         public int agentOrient = - 1;
         [SerializeField]
@@ -25,9 +25,17 @@ namespace TimelineClipsNamespace
             var playable = ScriptPlayable<FabulaPlayable>.Create(graph);
             var fabPlayable = playable.GetBehaviour();
 
-            //var schema = Schema.Resolve(playable.GetGraph().GetResolver());
-
-            fabPlayable.Initialize(Schema, Constraints);
+            //var schema = Schema.GetComponent<UnityActionOperator>();
+            Schema.defaultValue = null;
+            var schema = Schema.Resolve(playable.GetGraph().GetResolver());
+            if (schema == null)
+            {
+                fabPlayable.Initialize(null, Constraints);
+            }
+            else
+            {
+                fabPlayable.Initialize(schema, Constraints);
+            }
             return playable;
         }
     }

@@ -28,7 +28,7 @@ public class CamSchemaTest : MonoBehaviour {
 
     public bool executeTest = false;
 
-    public ExecutePlan fabExecutePlanScript;
+    public UnityPlanExecutor fabExecutePlanScript;
     public CamPlan discExecutePlanScript;
 
     public bool resetPlayableDirectors = false;
@@ -98,7 +98,7 @@ public class CamSchemaTest : MonoBehaviour {
         discExecutePlanScript = discExecutePlanObject.GetComponent<CamPlan>();
 
         var fabExecutePlanObject = GameObject.FindGameObjectWithTag("ExecuteTimeline");
-        fabExecutePlanScript = fabExecutePlanObject.GetComponent<ExecutePlan>();
+        fabExecutePlanScript = fabExecutePlanObject.GetComponent<UnityPlanExecutor>();
 
         // Instantiate Timeline Components
         fabExecutePlanScript.InstantiateExternally();
@@ -145,14 +145,14 @@ public class CamSchemaTest : MonoBehaviour {
     }
 
     // Sets up fabula timeline
-    public void InstantiateFabulaTimeline(ExecutePlan executePlanScript)
+    public void InstantiateFabulaTimeline(UnityPlanExecutor executePlanScript)
     {
         double startTime = 0;
         startTime = ProcessInstructionsForUnityAction(executePlanScript, action, unityAction, terms, startTime);
         ProcessInstructionsForUnityAction(executePlanScript, action2, unityAction2, terms2, startTime);
     }
 
-    public static double ProcessInstructionsForUnityAction(ExecutePlan ep, GameObject a, UnityActionOperator ua, List<GameObject> actionTerms, double startTime)
+    public static double ProcessInstructionsForUnityAction(UnityPlanExecutor ep, GameObject a, UnityActionOperator ua, List<GameObject> actionTerms, double startTime)
     {
         var instructions = ua.UnityInstructions;
 

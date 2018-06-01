@@ -9,7 +9,7 @@ using GraphNamespace;
 namespace PlanningNamespace
 {
     [ExecuteInEditMode]
-    public class ProblemStates : MonoBehaviour
+    public class UnityProblemCompiler : MonoBehaviour
     {
 
         public List<string> InitialState;
@@ -17,7 +17,7 @@ namespace PlanningNamespace
 
         public List<IPredicate> initialPredicateList;
         public List<IPredicate> goalPredicateList;
-
+        public bool DiscourseToo = false;
         public bool reset;
         public bool setInitialState;
 
@@ -76,6 +76,11 @@ namespace PlanningNamespace
                 {
                     var pred = ProcessStringItem(stringItem);
                     initialPredicateList.Add(pred as IPredicate);
+                    if (DiscourseToo)
+                    {
+                        var obsPred = new Predicate("obs", new List<ITerm>() { pred as ITerm }, true);
+                        initialPredicateList.Add(obsPred as IPredicate);
+                    }
                     Debug.Log(pred.ToString());
                 }
             }
@@ -87,6 +92,11 @@ namespace PlanningNamespace
                     var pred = ProcessStringItem(stringItem);
                     goalPredicateList.Add(pred as IPredicate);
                     Debug.Log(pred.ToString());
+                    if (DiscourseToo)
+                    {
+                        var obsPred = new Predicate("obs", new List<ITerm>() { pred as ITerm }, true);
+                        goalPredicateList.Add(obsPred as IPredicate);
+                    }
                 }
             }
 
@@ -101,6 +111,10 @@ namespace PlanningNamespace
                 initialPredicateList.Add(pred2 as IPredicate);
                 Debug.Log(pred.ToString());
                 Debug.Log(pred2.ToString());
+                var obsPred = new Predicate("obs", new List<ITerm>() { pred as ITerm }, true);
+                initialPredicateList.Add(obsPred as IPredicate);
+                var obsPred2 = new Predicate("obs", new List<ITerm>() { pred2 as ITerm }, true);
+                initialPredicateList.Add(obsPred2 as IPredicate);
             }
         }
 

@@ -13,11 +13,11 @@ namespace PlanningNamespace
 {
 
     [ExecuteInEditMode]
-    public class RunPlanner : MonoBehaviour
+    public class UnityPlanningInterface : MonoBehaviour
     {
 
         public GameObject UnityGroundActionFactory;
-
+        public bool UseCompositeSteps;
         public bool makePlan;
         public bool savePlan;
         public int retrievePlan;
@@ -72,12 +72,33 @@ namespace PlanningNamespace
         public void PrepareAndRun()
         {
             var UGAF = UnityGroundActionFactory.GetComponent<UnityGroundActionFactory>();
-            var initPlan = UGAF.PreparePlanner();
+            if (UGAF.InitialPlan == null)
+            {
+                UGAF.InitialPlan = UGAF.PreparePlanner();
+            }
+            if (UseCompositeSteps)
+            {
+                if (UGAF.CompositeSteps == 0 || GroundActionFactory.GroundActions.Count == UGAF.PrimitiveSteps)
+                {
+                    foreach (var unitydecomp in UGAF.DecompositionSchemata)
+                    {
+                        if (unitydecomp.NumGroundDecomps == 0 || unitydecomp.GroundDecomps[0].SubSteps[0].Name == "")
+                        {
+                            unitydecomp.Read();
+                            unitydecomp.Assemble();
+                            unitydecomp.Filter();
+                        }
+                    }
+                    var compositeSteps = UGAF.GroundDecompositionsToCompositeSteps();
+                    UGAF.AddCompositeStepsToGroundActionFactory(compositeSteps);
+                }
+            }
+            //var initPlan = UGAF.PreparePlanner();
             Debug.Log("Planner and initial plan Prepared");
 
             // MW-Loc-Conf
-            var solution = Run(initPlan, new ADstar(false), new E0(new AddReuseHeuristic(), true), 60000f);
-
+            //var solution = Run(initPlan, new ADstar(false), new E0(new AddReuseHeuristic(), true), 60000f);
+            var solution = Run(UGAF.InitialPlan, new ADstar(false), new E3(new AddReuseHeuristic()), 60000f);
             //var solution = Run(initPlan, new BFS(), new Nada(new ZeroHeuristic()), 20000);
             if (solution != null)
             {
@@ -100,7 +121,7 @@ namespace PlanningNamespace
 
         public IPlan Run(IPlan initPlan, ISearch SearchMethod, ISelection SelectMethod, float cutoff)
         {
-            var POP = new PlanSpacePlanner(initPlan, SelectMethod, SearchMethod, false)
+            var POP = new PlannerScheduler(initPlan as PlanSchedule, SelectMethod, SearchMethod)
             {
                 directory = "/",
                 problemNumber = 0
