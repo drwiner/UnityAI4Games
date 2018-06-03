@@ -378,7 +378,7 @@ namespace PlanningNamespace
 
                     // a reference to the j'th discourse step
                     var camStep = discourseSubSteps[j];
-                    camStep.CamObject = camObj.gameObject;
+                    camStep.CamObject = camObj.gameObject.name;
                     //camStep.CamObject = camObj.gameObject;
 
                     // a cloning of the cam plan step

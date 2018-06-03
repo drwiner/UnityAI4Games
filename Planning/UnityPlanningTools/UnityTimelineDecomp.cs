@@ -34,7 +34,7 @@ namespace PlanningNamespace {
         // Populated by "ReadDecomp"
         List<ClipSchema<FabulaAsset>> fabulaClips;
         List<ClipSchema<DiscourseAsset>> discourseClips;
-        List<ClipSchema<FabulaAsset>> globalConstraints;
+        List<ClipSchema<ConstraintAsset>> globalConstraints;
 
         // Populated by "AssembleDecomp"
         Dictionary<ClipSchema<FabulaAsset>, PlanStep> fabClipStepMap;
@@ -106,7 +106,7 @@ namespace PlanningNamespace {
                 if (GroundActionFactory.GroundActions == null || GroundActionFactory.GroundActions.Count == 0)
                 {
                     var UGAF = GameObject.Find("GroundActionFactory").GetComponent<UnityGroundActionFactory>();
-                    UGAF.PreparePlanner();
+                    UGAF.PreparePlanner(true);
                 }
                 Read();
             }
@@ -181,12 +181,25 @@ namespace PlanningNamespace {
             // keeping track of last clip to determine ordering and cntg relations with last.
             // TODO: support multiple fabula timelines
             ClipSchema<FabulaAsset> last = fabulaClips[0];
+            var visitedVariables = new List<string>();
             for (int i = 0; i < fabulaClips.Count; i++)
             {
                 var fabClip = fabulaClips[i];
 
                 // read the step variable from the asset
                 var planStep = ReadStepVariable(fabClip);
+
+                // Add terms to decomp terms
+                foreach(var term in planStep.Terms)
+                {
+                    if (visitedVariables.Contains(term.Variable))
+                    {
+                        term.Variable = term.Variable + planStep.GetHashCode().ToString();
+                    }
+                    visitedVariables.Add(term.Variable);
+                    Terms.Add(term);
+                }
+
                 SubSteps.Add(planStep);
 
                 // now check against the last item in there for timing.
@@ -377,7 +390,7 @@ namespace PlanningNamespace {
 
             fabulaClips = new List<ClipSchema<FabulaAsset>>();
             discourseClips = new List<ClipSchema<DiscourseAsset>>();
-            globalConstraints = new List<ClipSchema<FabulaAsset>>();
+            globalConstraints = new List<ClipSchema<ConstraintAsset>>();
 
             // get params by perceiving playable director.
             for (int i = 0; i < objectParameterTypes.Count; i++)
@@ -394,7 +407,7 @@ namespace PlanningNamespace {
                 if (track.name.Equals("ConstraintTrack")){
                     foreach (var clip in track.GetClips())
                     {
-                        var cschema = new ClipSchema<FabulaAsset>(clip.start, clip.duration, clip.displayName, clip.asset as FabulaAsset);
+                        var cschema = new ClipSchema<ConstraintAsset>(clip.start, clip.duration, clip.displayName, clip.asset as ConstraintAsset);
                         globalConstraints.Add(cschema);
                     }
                 }
@@ -440,7 +453,25 @@ namespace PlanningNamespace {
             var terms = new List<ITerm>();
             var preconditions = new List<IPredicate>();
             var effects = new List<IPredicate>();
+
             string schemaName = "";
+
+            var unityactionschema = fabAsset.schema;
+            if (unityactionschema != null)
+            {
+                schemaName = unityactionschema.name;
+                var actionOperator = GameObject.Find(schemaName).GetComponent<UnityActionOperator>();
+                for (int i = 0; i < actionOperator.MutableParameters.Count; i++)
+                {
+                    var newTerm = new Term(i.ToString())
+                    {
+                        Type = actionOperator.MutableParameters[i].name
+                    };
+
+                    terms.Add(newTerm as ITerm);
+                }
+            }
+           
 
             foreach(var constraint in fabAsset.Constraints)
             {
@@ -448,10 +479,28 @@ namespace PlanningNamespace {
                 var instruction = constraintParts[0];
                 if (instruction.Equals("terms"))
                 {
-                    foreach(var instructArg in constraintParts.Skip(1))
+                    for (int j = 1; j < constraintParts.Count(); j++)
                     {
-                        terms.Add(new Term(instructArg, true) as ITerm);
+                        var instructArg = constraintParts[j];
+                        var newTerm = new Term(instructArg, true) as ITerm;
+                        // if there already is a term at this index, need to reference with variable
+                        if (terms.Count > j - 1)
+                        {
+                            var existingTerm = terms[j - 1];
+                            newTerm.Variable = existingTerm.Variable;
+                            newTerm.Type = existingTerm.Type;
+                            terms[j - 1] = newTerm;
+                        }
+                        else
+                        {
+                            terms.Add(newTerm);
+                        }
+
                     }
+                    //foreach(var instructArg in constraintParts.Skip(1))
+                    //{
+                    //    terms.Add(new Term(instructArg, true) as ITerm);
+                    //}
                 }
                 if (instruction.Equals("term"))
                 {

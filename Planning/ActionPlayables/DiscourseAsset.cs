@@ -9,6 +9,7 @@ using UnityEngine.Timeline;
 
 namespace TimelineClipsNamespace
 {
+    [Serializable]
     public class DiscourseAsset : PlayableAsset
     {
         public CamSchema camSchema;

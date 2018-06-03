@@ -4,15 +4,18 @@ using CameraNamespace;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 namespace PlanningNamespace {
+
+    [Serializable]
     public class CamPlanStep : PlanStep, IPlanStep {
 
         // Initially used to reference prerequisite criteria.
         public CamSchema CamDetails = null;
 
         // Only assigned once it is grounded plan step.
-        public GameObject CamObject = null;
+        public string CamObject = null;
 
         // A totally and temporally ordered list of action segments
         public CamTargetSchema TargetDetails = null;
@@ -39,10 +42,19 @@ namespace PlanningNamespace {
             //var baseClone = base.Clone() as PlanStep;
             var newstep = new CamPlanStep(base.Clone() as PlanStep);
 
-            if (CamObject != null)
+            if (CamObject != null && CamObject != "")
             {
-                newstep.CamObject = GameObject.Instantiate(CamObject);
-                newstep.CamObject.transform.parent = GameObject.Find("CamPlanSteps").transform;
+                var parent = GameObject.Find("Cameras");
+                var camPlanStepsObject = GameObject.Find("CamPlanSteps").gameObject;
+                var possibleCamObj = FindUnderParent(parent.gameObject, CamObject);
+                if (possibleCamObj == null)
+                {
+                    possibleCamObj = FindUnderParent(camPlanStepsObject, CamObject);
+                }
+
+                GameObject newGO = GameObject.Instantiate(possibleCamObj);
+                newGO.transform.parent = camPlanStepsObject.transform;
+                newstep.CamObject = newGO.name;
             }
             if (CamDetails != null)
                 newstep.CamDetails = CamDetails.Clone();
@@ -50,6 +62,19 @@ namespace PlanningNamespace {
                 newstep.TargetDetails = TargetDetails.Clone();
 
             return newstep;
+        }
+
+       public static GameObject FindUnderParent(GameObject parent, string name)
+        {
+            for(int i = 0; i < parent.transform.childCount; i++)
+            {
+                var childObject = parent.transform.GetChild(i).gameObject;
+                if (childObject.name.Equals(name))
+                {
+                    return childObject;
+                }
+            }
+            return null;
         }
     }
 }

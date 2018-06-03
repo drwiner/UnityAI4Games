@@ -17,6 +17,7 @@ namespace PlanningNamespace
 
         public bool compilePrimitiveSteps = false;
         public bool compileCompositeSteps = false;
+        public bool regenerateInitialPlanWithComposite = false;
         public bool checkEffects = false;
 
         public int PrimitiveSteps;
@@ -39,7 +40,7 @@ namespace PlanningNamespace
             if (compilePrimitiveSteps)
             {
                 compilePrimitiveSteps = false;
-                initialPlan = PreparePlanner();
+                initialPlan = PreparePlanner(true);
                 PrimitiveOps = GroundActionFactory.GroundActions;
                 PrimitiveSteps = PrimitiveOps.Count;
                 CompositeSteps = 0;
@@ -48,23 +49,7 @@ namespace PlanningNamespace
             if (compileCompositeSteps)
             {
                 compileCompositeSteps = false;
-                CompositeSteps = 0;
-                CompositeOps = new List<IOperator>();
-                foreach (var unitydecomp in DecompositionSchemata)
-                {
-                    if (unitydecomp.NumGroundDecomps == 0)
-                    {
-                        unitydecomp.Read();
-                        unitydecomp.Assemble();
-                        unitydecomp.Filter();
-                    }
-                }
-                var compositeSteps = GroundDecompositionsToCompositeSteps();
-                foreach(var comp in compositeSteps)
-                {
-                    CompositeOps.Add(comp as IOperator);
-                }
-                AddCompositeStepsToGroundActionFactory(compositeSteps);
+                CompileCompositeSteps();
             }
 
             if (checkEffects)
@@ -83,9 +68,90 @@ namespace PlanningNamespace
                 }
                 // do we have what we need?
             }
+
+            if (regenerateInitialPlanWithComposite)
+            {
+                regenerateInitialPlanWithComposite = false;
+
+                Parser.path = "/";
+                var domainOperatorComponent = GameObject.FindGameObjectWithTag("ActionHost").GetComponent<DomainOperators>();
+                domainOperatorComponent.Reset();
+                var problem = CreateProblem(domainOperatorComponent.DomainOps);
+                var domain = CreateDomain(domainOperatorComponent);
+                var PF = new ProblemFreezer("Unity", "", domain, problem);
+                var initPlan = PlannerScheduler.CreateInitialPlan(PF);
+                CacheMaps.CacheAddReuseHeuristic(initPlan.Initial);
+                PrimaryEffectHack(InitialPlan.Initial);
+            }
+
         }
 
-        public void AddCompositeStepsToGroundActionFactory(List<CompositeSchedule> compositeSteps)
+        public void CompileCompositeSteps()
+        {
+            CompositeSteps = 0;
+            CompositeOps = new List<IOperator>();
+            foreach (var unitydecomp in DecompositionSchemata)
+            {
+                if (unitydecomp.NumGroundDecomps == 0)
+                {
+                    unitydecomp.Read();
+                    unitydecomp.Assemble();
+                    unitydecomp.Filter();
+                }
+            }
+            var compositeSteps = GroundDecompositionsToCompositeSteps(DecompositionSchemata);
+            foreach (var comp in compositeSteps)
+            {
+                CompositeOps.Add(comp as IOperator);
+            }
+            AddCompositeStepsToGroundActionFactory(compositeSteps);
+        }
+
+
+        public static void CreateSteps(UnityProblemCompiler UPC, List<UnityTimelineDecomp> DecompositionSchemata)
+        {
+            foreach (var unitydecomp in DecompositionSchemata)
+            {
+                if (unitydecomp.NumGroundDecomps == 0)
+                {
+                    unitydecomp.Read();
+                    unitydecomp.Assemble();
+                    unitydecomp.Filter();
+                    Debug.Log("Read,Assemble, and Filter for unity decomp: " + unitydecomp.name);
+                }
+            }
+            var compositeSteps = GroundDecompositionsToCompositeSteps(DecompositionSchemata);
+            AddCompositeStepsToGroundActionFactory(UPC.initialPredicateList, UPC.goalPredicateList, compositeSteps);
+        }
+
+        public static void AddCompositeStepsToGroundActionFactory(List<IPredicate> Initial, List<IPredicate> Goal, List<CompositeSchedule> compositeSteps)
+        {
+            var originalOps = GroundActionFactory.GroundActions;
+            var IOpList = new List<IOperator>();
+            foreach (var compstep in compositeSteps)
+            {
+                var asIOp = compstep as IOperator;
+                IOpList.Add(asIOp);
+                GroundActionFactory.InsertOperator(asIOp);
+            }
+
+            // Update Heuristic value for primary effects.
+            PrimaryEffectHack(new State(Initial) as IState);
+
+            // Amonst themselves
+            CacheMaps.CacheLinks(IOpList);
+
+            // as antecedants to the originals
+            CacheMaps.CacheLinks(IOpList, originalOps);
+
+            // as consequents to the originals
+            CacheMaps.CacheLinks(originalOps, IOpList);
+
+            // as antecedants to goal conditions
+            CacheMaps.CacheGoalLinks(IOpList, Goal);
+        }
+
+            public void AddCompositeStepsToGroundActionFactory(List<CompositeSchedule> compositeSteps)
         {
             var goalConditions = InitialPlan.GoalStep.Preconditions;
             var originalOps = GroundActionFactory.GroundActions;
@@ -124,8 +190,9 @@ namespace PlanningNamespace
             //CacheMaps.CacheAddReuseHeuristic(InitialPlan.Initial);
         }
 
-        public List<CompositeSchedule> GroundDecompositionsToCompositeSteps()
+        public static List<CompositeSchedule> GroundDecompositionsToCompositeSteps(List<UnityTimelineDecomp> DecompositionSchemata)
         {
+            var CompositeSteps = 0;
             var compositeSteps = new List<CompositeSchedule>();
             foreach (var decompschema in DecompositionSchemata)
             {
@@ -268,6 +335,7 @@ namespace PlanningNamespace
                         
                     // Create a composite step
                     var compOp = new Operator(decompschema.name, preconditions, effects);
+                    compOp.Height = 1;
                     compOp.NonEqualities = new List<List<ITerm>>();
                     var comp = new CompositeSchedule(compOp);
                     comp.ApplyDecomposition(gdecomp.Clone() as TimelineDecomposition);
@@ -281,7 +349,7 @@ namespace PlanningNamespace
             return compositeSteps;
         }
 
-        public List<IPredicate> CreatePredicatesWithStepTermsViaName(List<IPlanStep> stepsToCreatePredicatesWith, string predicateName)
+        public static List<IPredicate> CreatePredicatesWithStepTermsViaName(List<IPlanStep> stepsToCreatePredicatesWith, string predicateName)
         {
             var preds = new List<IPredicate>();
             foreach (var step in stepsToCreatePredicatesWith)
@@ -306,23 +374,10 @@ namespace PlanningNamespace
             return prob;
         }
 
-        public IPlan PreparePlanner()
+        public Domain CreateDomain(DomainOperators domainOperatorComponent)
         {
-            Parser.path = "/";
-
-            // Update Domain Operators
-            var domainOperatorComponent = GameObject.FindGameObjectWithTag("ActionHost").GetComponent<DomainOperators>();
-            domainOperatorComponent.Reset();
-
-            // Read and Create Problem
-            var problem = CreateProblem(domainOperatorComponent.DomainOps);
-            problem.ToString();
-            GroundActionFactory.Reset();
-            CacheMaps.Reset();
-
-            // Create Domain
-
             var newOps = new List<IOperator>();
+
             foreach (var domainOp in domainOperatorComponent.DomainOps)
             {
                 newOps.Add(domainOp as IOperator);
@@ -334,10 +389,48 @@ namespace PlanningNamespace
             domain.AddTypePair("", "Block");
             domain.AddTypePair("", "Location");
 
+            return domain;
+        }
+
+        public IPlan PreparePlanner(bool resetCache)
+        {
+            
+            Parser.path = "/";
+
+            // Update Domain Operators
+            var domainOperatorComponent = GameObject.FindGameObjectWithTag("ActionHost").GetComponent<DomainOperators>();
+            domainOperatorComponent.Reset();
+
+            // Read and Create Problem
+            var problem = CreateProblem(domainOperatorComponent.DomainOps);
+
+            // Create Domain
+            var domain = CreateDomain(domainOperatorComponent);
+
             // Create Problem Freezer.
             var PF = new ProblemFreezer("Unity", "", domain, problem);
+
             // Create Initial Plan
-            var initPlan = PlanSpacePlanner.CreateInitialPlan(PF);
+            var initPlan = PlannerScheduler.CreateInitialPlan(PF);
+
+            if (!resetCache)
+            {
+                if (GroundActionFactory.GroundActions != null)
+                {
+                    if (HeuristicMethods.visitedPreds == null || HeuristicMethods.visitedPreds.Count == 0)
+                    {
+                        CacheMaps.CacheAddReuseHeuristic(initPlan.Initial);
+                        //PrimaryEffectHack(initPlan.Initial);
+                    }
+                    Debug.Log("test");
+                    return initPlan;
+                }
+                
+            }
+
+            // Reset Cache
+            GroundActionFactory.Reset();
+            CacheMaps.Reset();
 
             GroundActionFactory.PopulateGroundActions(domain, problem);
 
@@ -371,7 +464,7 @@ namespace PlanningNamespace
             CacheMaps.CacheAddReuseHeuristic(initPlan.Initial);
 
             // Recreate Initial Plan
-            initPlan = PlanSpacePlanner.CreateInitialPlan(PF);
+            initPlan = PlannerScheduler.CreateInitialPlan(PF);
 
             return initPlan;
         }
@@ -425,34 +518,19 @@ namespace PlanningNamespace
         /// <param name="InitialState"></param>
         /// <param name="primaryEffect"></param>
         /// <returns></returns>
-        public void PrimaryEffectHack(IState InitialState)
+        public static void PrimaryEffectHack(IState InitialState)
         {
             var initialMap = new Dictionary<IPredicate, int>();
             var primaryEffectsInInitialState = new List<IPredicate>();
             foreach(var item in InitialState.Predicates)
             {
-                if (item.Name.Equals("obs"))
+                if (IsPrimaryEffect(item))
                 {
                     primaryEffectsInInitialState.Add(item);
                     initialMap[item] = 0;
                 }
             }
 
-            // The following only necessary if there are negative primary-effect preconditions to actions, which there are not
-            //List<IPredicate> newInitialList = InitialState.Predicates;
-            //foreach (var pre in CacheMaps.CausalMap.Keys)
-            //{
-            //    if (pre.Sign)
-            //    {
-            //        continue;
-            //    }
-            //    if (!newInitialList.Contains(pre.GetReversed()))
-            //    {
-            //        var obsTerm = new Predicate("obs", new List<ITerm>() { pre as ITerm }, false);
-            //        newInitialList.Add(obsTerm);
-            //        initialMap[obsTerm] = 0;
-            //    }
-            //}
             var heurDict = PrimaryEffectRecursiveHeuristicCache(initialMap, primaryEffectsInInitialState);
 
             foreach(var keyvalue in heurDict)
@@ -461,9 +539,10 @@ namespace PlanningNamespace
             }
         }
 
-        private Dictionary<IPredicate, int> PrimaryEffectRecursiveHeuristicCache(Dictionary<IPredicate, int> currentMap, List<IPredicate> InitialConditions)
+        private static Dictionary<IPredicate, int> PrimaryEffectRecursiveHeuristicCache(Dictionary<IPredicate, int> currentMap, List<IPredicate> InitialConditions)
         {
             var initiallyRelevant = new List<IOperator>();
+            var CompositeOps = GroundActionFactory.GroundActions.Where(act => act.Height > 0);
             foreach(var compOp in CompositeOps)
             {
                 var initiallySupported = true;

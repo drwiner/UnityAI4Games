@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace CameraNamespace
 {
-
+    [Serializable]
     public class CamAttributesStruct : MonoBehaviour
     {
         // Composition

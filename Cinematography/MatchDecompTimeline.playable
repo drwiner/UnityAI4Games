@@ -130,11 +130,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 00e300adbdfba55428a438c1d2b5a639, type: 3}
   m_Name: FabulaAsset
   m_EditorClassIdentifier: 
-  Schema: {fileID: 0}
+  Schema:
+    exposedName: 3d2086c4483e50643b3a0f2a6a0b6728
+    defaultValue: {fileID: 0}
   Constraints:
   - not schema move
   agentOrient: 0
   location: 
+  schema: {fileID: 0}
 --- !u!114 &114223284802486792
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -222,11 +225,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 00e300adbdfba55428a438c1d2b5a639, type: 3}
   m_Name: FabulaAsset
   m_EditorClassIdentifier: 
-  Schema: {fileID: 0}
+  Schema:
+    exposedName: 
+    defaultValue: {fileID: 0}
   Constraints:
   - rule180 shot1 shot2
   agentOrient: 0
   location: 
+  schema: {fileID: 0}
 --- !u!114 &114315605428839570
 MonoBehaviour:
   m_ObjectHideFlags: 1

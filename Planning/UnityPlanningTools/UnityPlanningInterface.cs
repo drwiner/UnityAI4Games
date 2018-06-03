@@ -16,9 +16,12 @@ namespace PlanningNamespace
     public class UnityPlanningInterface : MonoBehaviour
     {
 
-        public GameObject UnityGroundActionFactory;
+        public UnityGroundActionFactory UGAF;
+        public UnityProblemCompiler UPC;
+        public CacheManager cacheManager;
         public bool UseCompositeSteps;
         public bool makePlan;
+        public bool DeCacheIt;
         public bool savePlan;
         public int retrievePlan;
         public bool getPlan;
@@ -71,34 +74,33 @@ namespace PlanningNamespace
 
         public void PrepareAndRun()
         {
-            var UGAF = UnityGroundActionFactory.GetComponent<UnityGroundActionFactory>();
-            if (UGAF.InitialPlan == null)
+            Parser.path = @"D:\documents\frostbow\";
+            UPC.ReadProblem();
+
+            if (DeCacheIt)
             {
-                UGAF.InitialPlan = UGAF.PreparePlanner();
+                DeCacheIt = false;
+                cacheManager.DeCacheIt();
+                CacheMaps.CacheAddReuseHeuristic(new State(UPC.initialPredicateList) as IState);
+                UnityGroundActionFactory.PrimaryEffectHack(new State(UPC.initialPredicateList) as IState);
             }
-            if (UseCompositeSteps)
+            else
             {
-                if (UGAF.CompositeSteps == 0 || GroundActionFactory.GroundActions.Count == UGAF.PrimitiveSteps)
-                {
-                    foreach (var unitydecomp in UGAF.DecompositionSchemata)
-                    {
-                        if (unitydecomp.NumGroundDecomps == 0 || unitydecomp.GroundDecomps[0].SubSteps[0].Name == "")
-                        {
-                            unitydecomp.Read();
-                            unitydecomp.Assemble();
-                            unitydecomp.Filter();
-                        }
-                    }
-                    var compositeSteps = UGAF.GroundDecompositionsToCompositeSteps();
-                    UGAF.AddCompositeStepsToGroundActionFactory(compositeSteps);
-                }
+                UGAF.PreparePlanner(true);
+                GroundActionFactory.GroundActions = new HashSet<IOperator>(GroundActionFactory.GroundActions).ToList();
+                UnityGroundActionFactory.CreateSteps(UPC, UGAF.DecompositionSchemata);
+
+                cacheManager.CacheIt();
             }
-            //var initPlan = UGAF.PreparePlanner();
+
+            var initialPlan = PlannerScheduler.CreateInitialPlan(UPC.initialPredicateList, UPC.goalPredicateList);
+
+        
             Debug.Log("Planner and initial plan Prepared");
 
             // MW-Loc-Conf
             //var solution = Run(initPlan, new ADstar(false), new E0(new AddReuseHeuristic(), true), 60000f);
-            var solution = Run(UGAF.InitialPlan, new ADstar(false), new E3(new AddReuseHeuristic()), 60000f);
+            var solution = Run(initialPlan, new ADstar(false), new E3(new AddReuseHeuristic()), 60000f);
             //var solution = Run(initPlan, new BFS(), new Nada(new ZeroHeuristic()), 20000);
             if (solution != null)
             {
@@ -121,9 +123,11 @@ namespace PlanningNamespace
 
         public IPlan Run(IPlan initPlan, ISearch SearchMethod, ISelection SelectMethod, float cutoff)
         {
-            var POP = new PlannerScheduler(initPlan as PlanSchedule, SelectMethod, SearchMethod)
+            var directory = Parser.GetTopDirectory() + "/Results/";
+            System.IO.Directory.CreateDirectory(directory);
+            var POP = new PlannerScheduler(initPlan.Clone() as IPlan, SelectMethod, SearchMethod)
             {
-                directory = "/",
+                directory = directory,
                 problemNumber = 0
             };
             Debug.Log("Running plan-search");
