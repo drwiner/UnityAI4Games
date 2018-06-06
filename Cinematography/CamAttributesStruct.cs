@@ -31,8 +31,6 @@ namespace CameraNamespace
         {
             return other.scale == scale;
         }
-
-
     }
 
     [Serializable]

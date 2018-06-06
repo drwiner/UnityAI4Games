@@ -15,35 +15,45 @@ namespace PlanningNamespace
         public string problemname;
         public bool cacheIt = false;
         public bool decacheIt = false;
+        public bool justCacheMapsAndEffort = false;
         
         // Use this for initialization
         public void CacheIt()
         {
-
+            Parser.path = @"D:\documents\frostbow\";
             var FileName = GetFileName();
             var CausalMapFileName = GetCausalMapFileName();
             var ThreatMapFileName = GetThreatMapFileName();
-           // var EffortMapFileName = GetEffortDictFileName();
+            var EffortMapFileName = GetEffortDictFileName();
 
             System.IO.Directory.CreateDirectory(FileName);
             System.IO.Directory.CreateDirectory(CausalMapFileName);
             System.IO.Directory.CreateDirectory(ThreatMapFileName);
-         //   System.IO.Directory.CreateDirectory(EffortMapFileName);
-
-            foreach (var op in GroundActionFactory.GroundActions)
+            System.IO.Directory.CreateDirectory(EffortMapFileName);
+            if (!justCacheMapsAndEffort)
             {
-
-                if (op.Height> 0)
+                foreach (var op in GroundActionFactory.GroundActions)
                 {
-                    Debug.Log(op.ToString());
-                }
 
-                BinarySerializer.SerializeObject(FileName + op.GetHashCode().ToString() + ".CachedOperator", op);
+                    if (op.Height > 0)
+                    {
+                        Debug.Log(op.ToString());
+                    }
+
+                    BinarySerializer.SerializeObject(FileName + op.GetHashCode().ToString() + ".CachedOperator", op);
+                }
             }
 
-            //BinarySerializer.SerializeObject(CausalMapFileName + ".CachedCausalMap", CacheMaps.CausalMap);
-            //BinarySerializer.SerializeObject(ThreatMapFileName + ".CachedThreatMap", CacheMaps.ThreatMap);
-          
+            BinarySerializer.SerializeObject(CausalMapFileName + ".CachedCausalMap", CacheMaps.CausalMap);
+            BinarySerializer.SerializeObject(ThreatMapFileName + ".CachedThreatMap", CacheMaps.ThreatMap);
+            try
+            {
+                BinarySerializer.SerializeObject(EffortMapFileName + ".CachedEffortMap", HeuristicMethods.visitedPreds);
+            }
+            catch
+            {
+
+            }
             //var seeable = HeuristicMethods.visitedPreds;
             //var alreadyVisited = new Dictionary<int, IPredicate>();
             //foreach (var keyvalue in HeuristicMethods.visitedPreds)
@@ -59,12 +69,10 @@ namespace PlanningNamespace
             //BinarySerializer.SerializeObject(EffortMapFileName + ".CachedEffortMap", HeuristicMethods.visitedPreds);
         }
 
-        public void DeCacheIt()
+        public void DecacheSteps()
         {
+            Parser.path = @"D:\documents\frostbow\";
             var FileName = GetFileName();
-            var CausalMapFileName = GetCausalMapFileName();
-            var ThreatMapFileName = GetThreatMapFileName();
-
             GroundActionFactory.GroundActions = new List<IOperator>();
             GroundActionFactory.GroundLibrary = new Dictionary<int, IOperator>();
             foreach (var file in Directory.GetFiles(Parser.GetTopDirectory() + @"Cached\CachedOperators\UnityBlocksWorld\", problemname + "*.CachedOperator"))
@@ -75,15 +83,45 @@ namespace PlanningNamespace
             }
             // THIS is so that initial and goal steps created don't get matched with these
             Operator.SetCounterExternally(GroundActionFactory.GroundActions.Count + 1);
+        }
 
-            var cmap = BinarySerializer.DeSerializeObject<Dictionary<IPredicate, List<int>>>(CausalMapFileName + ".CachedCausalMap");
-            CacheMaps.CausalMap = cmap;
+        public void DeCacheIt()
+        {
+            Parser.path = @"D:\documents\frostbow\";
+            DecacheSteps();
 
-            var tcmap = BinarySerializer.DeSerializeObject<Dictionary<IPredicate, List<int>>>(ThreatMapFileName + ".CachedThreatMap");
-            CacheMaps.ThreatMap = tcmap;
+            UnityPlanningInterface.AddObservedNegativeConditions(UPC);
 
-            //var emap = BinarySerializer.DeSerializeObject<Dictionary<IPredicate, int>>(GetEffortDictFileName() + ".CachedEffortMap");
-            
+            var CausalMapFileName = GetCausalMapFileName();
+            var ThreatMapFileName = GetThreatMapFileName();
+            var EffortMapFileName = GetEffortDictFileName();
+
+            try
+            {
+                var cmap = BinarySerializer.DeSerializeObject<Dictionary<Literal, List<int>>>(CausalMapFileName + ".CachedCausalMap");
+                CacheMaps.CausalMap = cmap;
+
+                var tcmap = BinarySerializer.DeSerializeObject<Dictionary<Literal, List<int>>>(ThreatMapFileName + ".CachedThreatMap");
+                CacheMaps.ThreatMap = tcmap;
+
+                try
+                {
+                    var emap = BinarySerializer.DeSerializeObject<Dictionary<Literal, int>>(EffortMapFileName + ".CachedEffortMap");
+                    HeuristicMethods.visitedPreds = emap;
+                }
+                catch
+                {
+                    CacheMaps.CacheAddReuseHeuristic(new State(UPC.initialPredicateList) as IState);
+                    UnityGroundActionFactory.PrimaryEffectHack(new State(UPC.initialPredicateList) as IState);
+                }
+            }
+            catch
+            {
+                CacheMaps.CacheLinks(GroundActionFactory.GroundActions);
+                CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, UPC.goalPredicateList);
+                CacheMaps.CacheAddReuseHeuristic(new State(UPC.initialPredicateList) as IState);
+                UnityGroundActionFactory.PrimaryEffectHack(new State(UPC.initialPredicateList) as IState);
+            }
 
         }
 
@@ -127,9 +165,9 @@ namespace PlanningNamespace
     public class PropositionalDecompositionalPlanningProblem
     {
         public List<IOperator> Actions;
-        public Dictionary<IPredicate, List<IOperator>> CausalMap;
-        public Dictionary<IPredicate, List<IOperator>> ThreatMap;
-        public Dictionary<IPredicate, int> EffortMap;
+        public Dictionary<Literal, List<IOperator>> CausalMap;
+        public Dictionary<Literal, List<IOperator>> ThreatMap;
+        public Dictionary<Literal, int> EffortMap;
         public List<IPredicate> initial;
         public List<IPredicate> goal;
 

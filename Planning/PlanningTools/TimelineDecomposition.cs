@@ -138,10 +138,8 @@ namespace PlanningNamespace
                     }
                 }
                 
-
                 // zip to dict
                 var varDict = EnumerableExtension.Zip(termStringList, constantStringList).ToDictionary(x => x.Key, x => x.Value);
-
 
                 /////////////////////////////////////////////////////////
                 // BINDINGS ARE ADDED. NEED TO APPLY BINDINGS TO SUBSTEPS
@@ -514,6 +512,7 @@ namespace PlanningNamespace
             // Create "worlds" of different camera shots.
             foreach (CamPlanStep discStep in discourseSubSteps)
             {
+                var discStepClone = discStep.Clone() as CamPlanStep;
                 string targetLocation = "";
                 int targetOrient = -1;
 
@@ -532,13 +531,13 @@ namespace PlanningNamespace
 
                     // use new substep to access location of action
                     targetLocation = locationDict[substepTarget.ID];
-                    discStep.TargetDetails.location = targetLocation;
+                    discStepClone.TargetDetails.location = targetLocation;
                     // camschema.targetLocation = 
                     //  discClipSchema.asset.targetSchema.location = locationDict[substepTarget.ID];
 
                     // use new substep to access orientation of action
                     targetOrient = orientDict[substepTarget.ID];
-                    discStep.TargetDetails.orient = targetOrient;
+                    discStepClone.TargetDetails.orient = targetOrient;
                     // discClipSchema.asset.targetSchema.orient = orientDict[substepTarget.ID];
                 }
                 else
@@ -553,7 +552,7 @@ namespace PlanningNamespace
                 foreach (var camOption in camOptions)
                 {
                     // Cam Schema must be consistent with option
-                    if (!discStep.CamDetails.IsConsistent(camOption))
+                    if (!discStepClone.CamDetails.IsConsistent(camOption))
                     {
                         continue;
                     }

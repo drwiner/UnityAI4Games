@@ -19,6 +19,16 @@ namespace PlanningNamespace
             Cntgs = new List<Tuple<IPlanStep, IPlanStep>>();
         }
 
+        public CompositeSchedule(Composite comp) : base(comp, comp.InitialStep, comp.GoalStep, comp.SubSteps, comp.SubOrderings, comp.SubLinks)
+        {
+            Cntgs = new List<Tuple<IPlanStep, IPlanStep>>();
+        }
+
+        public CompositeSchedule(Composite comp, List<Tuple<IPlanStep, IPlanStep>> cntgs) : base(comp, comp.InitialStep, comp.GoalStep, comp.SubSteps, comp.SubOrderings, comp.SubLinks)
+        {
+            Cntgs = cntgs;
+        }
+
         /// <summary>
         /// The compositeschedule has terms, preconditions, and effects. 
         /// All preconditions and effects are expected to be ground because they are created based on the ground decomposition
@@ -77,10 +87,7 @@ namespace PlanningNamespace
             {
                 newCntgs.Add(cntg);
             }
-            var theClone = new CompositeSchedule(CompositeBase)
-            {
-                Cntgs = newCntgs
-            };
+            var theClone = new CompositeSchedule(CompositeBase, newCntgs);
             return theClone;
         }
     }

@@ -20,6 +20,11 @@ namespace PlanningNamespace {
             Cntgs = comp.Cntgs;
         }
 
+        public CompositeSchedulePlanStep(IComposite comp, List<Tuple<IPlanStep, IPlanStep>> cntgs) : base(comp)
+        {
+            Cntgs = cntgs;
+        }
+
         public CompositeSchedulePlanStep(IPlanStep ps) : base(ps)
         {
             var ca = ps.Action as CompositeSchedule;

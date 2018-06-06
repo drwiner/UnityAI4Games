@@ -103,6 +103,7 @@ namespace PlanningNamespace
             foreach (var comp in compositeSteps)
             {
                 CompositeOps.Add(comp as IOperator);
+                CompositeSteps++;
             }
             AddCompositeStepsToGroundActionFactory(compositeSteps);
         }
@@ -192,7 +193,6 @@ namespace PlanningNamespace
 
         public static List<CompositeSchedule> GroundDecompositionsToCompositeSteps(List<UnityTimelineDecomp> DecompositionSchemata)
         {
-            var CompositeSteps = 0;
             var compositeSteps = new List<CompositeSchedule>();
             foreach (var decompschema in DecompositionSchemata)
             {
@@ -318,7 +318,15 @@ namespace PlanningNamespace
                         */
 
                     var preconditions = CreatePredicatesWithStepTermsViaName(StepsNotObservedToStart, "obs-starts");
-
+                    foreach(var stepAction in StepsObservedToStart)
+                    {
+                        foreach(var precon in stepAction.Preconditions)
+                        {
+                            var obsTerm = new Predicate("obs", new List<ITerm>() { precon as ITerm }, true);
+                            preconditions.Add(obsTerm);
+                            preconditions.Add(precon);
+                        }
+                    }
                     /* Effects
                         * 
                         * foreach action that is NOT observed to end, give effect that we observed it start
@@ -331,6 +339,7 @@ namespace PlanningNamespace
                         // cast predicate as term?
                         var obsTerm = new Predicate("obs", new List<ITerm>() { observedEffect as ITerm}, true);
                         effects.Add(obsTerm);
+                        effects.Add(observedEffect);
                     }
                         
                     // Create a composite step
@@ -342,8 +351,6 @@ namespace PlanningNamespace
 
                     // Add new composite step to list and add its string component to displayable gameobject component
                     compositeSteps.Add(comp);
-                    CompositeSteps++;
-
                 }
             }
             return compositeSteps;
@@ -520,14 +527,14 @@ namespace PlanningNamespace
         /// <returns></returns>
         public static void PrimaryEffectHack(IState InitialState)
         {
-            var initialMap = new Dictionary<IPredicate, int>();
+            var initialMap = new Dictionary<Literal, int>();
             var primaryEffectsInInitialState = new List<IPredicate>();
             foreach(var item in InitialState.Predicates)
             {
                 if (IsPrimaryEffect(item))
                 {
                     primaryEffectsInInitialState.Add(item);
-                    initialMap[item] = 0;
+                    initialMap[new Literal(item)] = 0;
                 }
             }
 
@@ -539,7 +546,7 @@ namespace PlanningNamespace
             }
         }
 
-        private static Dictionary<IPredicate, int> PrimaryEffectRecursiveHeuristicCache(Dictionary<IPredicate, int> currentMap, List<IPredicate> InitialConditions)
+        private static Dictionary<Literal, int> PrimaryEffectRecursiveHeuristicCache(Dictionary<Literal, int> currentMap, List<IPredicate> InitialConditions)
         {
             var initiallyRelevant = new List<IOperator>();
             var CompositeOps = GroundActionFactory.GroundActions.Where(act => act.Height > 0);
@@ -574,33 +581,34 @@ namespace PlanningNamespace
                 int thisStepsValue = 0;
                 foreach (var precon in newStep.Preconditions)
                 {
+                    var preLiteral = new Literal(precon);
                     if (IsPrimaryEffect(precon))
                     {
-                        thisStepsValue += currentMap[precon];
+                        thisStepsValue += currentMap[preLiteral];
                     }
                     else
                     {
-                        thisStepsValue += HeuristicMethods.visitedPreds[precon];
+                        thisStepsValue += HeuristicMethods.visitedPreds[preLiteral];
                     }
                 }
 
                 foreach (var eff in newStep.Effects)
                 {
-
+                    var effLiteral = new Literal(eff);
                     if (!IsPrimaryEffect(eff))
                     {
                         continue;
                     }
 
                     // ignore effects we've already seen; these occur "earlier" in planning graph
-                    if (currentMap.ContainsKey(eff))
+                    if (currentMap.ContainsKey(effLiteral))
                         continue;
 
                     // If we make it this far, then we've reached an unexplored literal effect
                     toContinue = true;
 
                     // The current value of this effect is 1 (this new step) + the sum of the preconditions of this step in the map.
-                    currentMap[eff] = 1 + thisStepsValue;
+                    currentMap[effLiteral] = 1 + thisStepsValue;
 
                     // Add this effect to the new initial Condition for subsequent round
                     InitialConditions.Add(eff);

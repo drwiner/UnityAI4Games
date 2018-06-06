@@ -9,18 +9,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 337831424, guid: 6a10b2909283487f913b00d94cd3faf5, type: 3}
-  m_Name: MatchDecompTimeline
+  m_Name: (B) PickUpTimeline
   m_EditorClassIdentifier: 
   m_NextId: 0
   m_Tracks:
-  - {fileID: 114177850130707608}
-  - {fileID: 114223284802486792}
-  - {fileID: 114315605428839570}
+  - {fileID: 114520960298040954}
+  - {fileID: 114944695894505090}
+  - {fileID: 114879984951233900}
   m_FixedDuration: 0
   m_EditorSettings:
     m_Framerate: 60
   m_DurationMode: 0
---- !u!114 &114014814322847524
+--- !u!114 &114064210671161976
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
@@ -28,25 +28,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fedf28a971535474fbacb1991bd0bc37, type: 3}
-  m_Name: DiscourseAsset
+  m_Script: {fileID: 11500000, guid: 00e300adbdfba55428a438c1d2b5a639, type: 3}
+  m_Name: FabulaAsset
   m_EditorClassIdentifier: 
-  camSchema:
-    scale: 4
-    targetLocation: 
-    targetOrientation: -1
-    hangle: 165
-    vangle: 30
-  targetSchema:
-    orient: -1
-    location: 
-    ActionSegs:
-    - actionVarName: Action1
-      targetVarName: 
-      startPercent: 0
-      endPercent: 0
+  Schema:
+    exposedName: a447813bcc68a704796fe33d39168eb9
+    defaultValue: {fileID: 0}
   Constraints: []
---- !u!114 &114177850130707608
+  agentOrient: -1
+  location: 
+  schema: {fileID: 0}
+--- !u!114 &114520960298040954
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
@@ -63,161 +55,8 @@ MonoBehaviour:
   m_AnimClip: {fileID: 0}
   m_Parent: {fileID: 11400000}
   m_Children: []
-  m_Clips:
-  - m_Start: 0
-    m_ClipIn: 0
-    m_Asset: {fileID: 114880201556312600}
-    m_UnderlyingAsset: {fileID: 114880201556312600}
-    m_Duration: 2.9166666666666665
-    m_TimeScale: 1
-    m_ParentTrack: {fileID: 114177850130707608}
-    m_EaseInDuration: 0
-    m_EaseOutDuration: 0
-    m_BlendInDuration: -1
-    m_BlendOutDuration: -1
-    m_MixInCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 2
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-      - serializedVersion: 2
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_MixOutCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 2
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-      - serializedVersion: 2
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_BlendInCurveMode: 0
-    m_BlendOutCurveMode: 0
-    m_ExposedParameterNames: []
-    m_AnimationCurves: {fileID: 0}
-    m_Recordable: 0
-    m_PostExtrapolationMode: 0
-    m_PreExtrapolationMode: 0
-    m_PostExtrapolationTime: 0
-    m_PreExtrapolationTime: 0
-    m_DisplayName: ConstraintAsset
-    m_Version: 1
---- !u!114 &114203913302276124
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 00e300adbdfba55428a438c1d2b5a639, type: 3}
-  m_Name: FabulaAsset
-  m_EditorClassIdentifier: 
-  Schema:
-    exposedName: 3d2086c4483e50643b3a0f2a6a0b6728
-    defaultValue: {fileID: 0}
-  Constraints:
-  - not schema move
-  agentOrient: -1
-  location: 
-  schema: {fileID: 0}
---- !u!114 &114223284802486792
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1778877366, guid: 6a10b2909283487f913b00d94cd3faf5, type: 3}
-  m_Name: FabulaTrack
-  m_EditorClassIdentifier: 
-  m_Locked: 0
-  m_Muted: 0
-  m_CustomPlayableFullTypename: 
-  m_AnimClip: {fileID: 0}
-  m_Parent: {fileID: 11400000}
-  m_Children: []
-  m_Clips:
-  - m_Start: 0.8833333333333333
-    m_ClipIn: 0
-    m_Asset: {fileID: 114203913302276124}
-    m_UnderlyingAsset: {fileID: 114203913302276124}
-    m_Duration: 1.2166666666666668
-    m_TimeScale: 1
-    m_ParentTrack: {fileID: 114223284802486792}
-    m_EaseInDuration: 0
-    m_EaseOutDuration: 0
-    m_BlendInDuration: -1
-    m_BlendOutDuration: -1
-    m_MixInCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 2
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-      - serializedVersion: 2
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_MixOutCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 2
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-      - serializedVersion: 2
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_BlendInCurveMode: 0
-    m_BlendOutCurveMode: 0
-    m_ExposedParameterNames: []
-    m_AnimationCurves: {fileID: 0}
-    m_Recordable: 0
-    m_PostExtrapolationMode: 0
-    m_PreExtrapolationMode: 0
-    m_PostExtrapolationTime: 0
-    m_PreExtrapolationTime: 0
-    m_DisplayName: Action1
-    m_Version: 1
---- !u!114 &114315605428839570
+  m_Clips: []
+--- !u!114 &114879984951233900
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
@@ -237,11 +76,11 @@ MonoBehaviour:
   m_Clips:
   - m_Start: 0
     m_ClipIn: 0
-    m_Asset: {fileID: 114014814322847524}
-    m_UnderlyingAsset: {fileID: 114014814322847524}
-    m_Duration: 1.4666666666666666
+    m_Asset: {fileID: 114966071705993188}
+    m_UnderlyingAsset: {fileID: 114966071705993188}
+    m_Duration: 5
     m_TimeScale: 1
-    m_ParentTrack: {fileID: 114315605428839570}
+    m_ParentTrack: {fileID: 114879984951233900}
     m_EaseInDuration: 0
     m_EaseOutDuration: 0
     m_BlendInDuration: -1
@@ -293,13 +132,31 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: Shot1
     m_Version: 1
-  - m_Start: 1.4666666666666666
+--- !u!114 &114944695894505090
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1778877366, guid: 6a10b2909283487f913b00d94cd3faf5, type: 3}
+  m_Name: FabulaTrack
+  m_EditorClassIdentifier: 
+  m_Locked: 0
+  m_Muted: 0
+  m_CustomPlayableFullTypename: 
+  m_AnimClip: {fileID: 0}
+  m_Parent: {fileID: 11400000}
+  m_Children: []
+  m_Clips:
+  - m_Start: 0
     m_ClipIn: 0
-    m_Asset: {fileID: 114567106819242642}
-    m_UnderlyingAsset: {fileID: 114567106819242642}
-    m_Duration: 1.45
+    m_Asset: {fileID: 114064210671161976}
+    m_UnderlyingAsset: {fileID: 114064210671161976}
+    m_Duration: 5
     m_TimeScale: 1
-    m_ParentTrack: {fileID: 114315605428839570}
+    m_ParentTrack: {fileID: 114944695894505090}
     m_EaseInDuration: 0
     m_EaseOutDuration: 0
     m_BlendInDuration: -1
@@ -349,9 +206,9 @@ MonoBehaviour:
     m_PreExtrapolationMode: 0
     m_PostExtrapolationTime: 0
     m_PreExtrapolationTime: 0
-    m_DisplayName: Shot2
+    m_DisplayName: Action1
     m_Version: 1
---- !u!114 &114567106819242642
+--- !u!114 &114966071705993188
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
@@ -375,18 +232,5 @@ MonoBehaviour:
     - actionVarName: Action1
       targetVarName: 
       startPercent: 0
-      endPercent: 0
+      endPercent: 1
   Constraints: []
---- !u!114 &114880201556312600
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c0e26b60da7e8894ca01af65bb177368, type: 3}
-  m_Name: ConstraintAsset
-  m_EditorClassIdentifier: 
-  Constraints:
-  - rule180 shot1 shot2

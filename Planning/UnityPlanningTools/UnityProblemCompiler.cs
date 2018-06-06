@@ -83,6 +83,7 @@ namespace PlanningNamespace
                     }
                     Debug.Log(pred.ToString());
                 }
+                
             }
             if (GoalState.Count > 0)
             {

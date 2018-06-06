@@ -61,19 +61,22 @@ namespace PlanningNamespace
                 if (cndt == null)
                     continue;
 
-                var planClone = plan.Clone() as IPlan;
+                var planClone = plan.Clone() as PlanSchedule;
                 IPlanStep newStep;
                 if (cndt.Height > 0)
                 {
                     //continue;
-                    var compCndt = cndt.Clone() as CompositeSchedule;
-                    newStep = new CompositeSchedulePlanStep(compCndt)
+                    var compCndt = cndt as CompositeSchedule;
+                    newStep = new CompositeSchedulePlanStep(compCndt.Clone() as IComposite, compCndt.Cntgs)
                     {
                         Depth = oc.step.Depth
                     };
+                    
                 }
                 else
                 {
+                    // only add composite steps...
+                    continue;
                     newStep = new PlanStep(cndt.Clone() as IOperator)
                     {
                         Depth = oc.step.Depth

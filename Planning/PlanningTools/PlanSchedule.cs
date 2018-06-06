@@ -33,7 +33,25 @@ namespace PlanningNamespace
             Cntgs = new Schedule<IPlanStep>(cntgs);
         }
 
-        public new void InsertDecomp(ICompositePlanStep newStep)
+        public new void Insert(IPlanStep newStep)
+        {
+            if (newStep.Height > 0)
+            {
+               // var ns = newStep as ICompositePlanStep;
+                InsertDecomp(newStep as CompositeSchedulePlanStep);
+            }
+            else
+            {
+                InsertPrimitive(newStep);
+            }
+        }
+
+        public void Insert(CompositeSchedulePlanStep newStep)
+        {
+            InsertDecomp(newStep);
+        }
+
+        public void InsertDecomp(CompositeSchedulePlanStep newStep)
         {
             Decomps += 1;
             var IDMap = new Dictionary<int, IPlanStep>();
@@ -237,7 +255,7 @@ namespace PlanningNamespace
         /// <param name="step2"></param>
         public void MergeSteps(IPlanStep step1, IPlanStep step2)
         {
-
+            Debug.Log(string.Format("Merged steps: {0}, {1}", step1, step2));
             var newCntgs = new List<Tuple<IPlanStep, IPlanStep>>();
             foreach (var cntg in Cntgs.edges)
             {

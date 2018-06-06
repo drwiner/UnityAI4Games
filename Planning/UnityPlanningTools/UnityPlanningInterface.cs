@@ -25,6 +25,9 @@ namespace PlanningNamespace
         public bool savePlan;
         public int retrievePlan;
         public bool getPlan;
+        public bool justCacheMapsAndEffort = false;
+
+        public float cutoffTime = 10000;
 
         public List<string> PlanSteps;
 
@@ -72,6 +75,36 @@ namespace PlanningNamespace
             
         }
 
+        public static void AddObservedNegativeConditions(UnityProblemCompiler UPC)
+        {
+            foreach (var ga in GroundActionFactory.GroundActions)
+            {
+                foreach (var precon in ga.Preconditions)
+                {
+                    // if the precon is signed positive, ignore
+                    if (precon.Sign)
+                    {
+                        continue;
+                    }
+                    // if initially the precondition reveresed is true, ignore
+                    if (UPC.initialPredicateList.Contains(precon.GetReversed()))
+                    {
+                        continue;
+                    }
+                    
+                    // then this precondition is negative and its positive correlate isn't in the initial state
+                    var obsPred = new Predicate("obs", new List<ITerm>() { precon as ITerm }, true);
+
+                    if (UPC.initialPredicateList.Contains(obsPred as IPredicate))
+                    {
+                        continue;
+                    }
+
+                    UPC.initialPredicateList.Add(obsPred as IPredicate);
+                }
+            }
+        }
+
         public void PrepareAndRun()
         {
             Parser.path = @"D:\documents\frostbow\";
@@ -81,13 +114,27 @@ namespace PlanningNamespace
             {
                 DeCacheIt = false;
                 cacheManager.DeCacheIt();
+            }
+            else if (justCacheMapsAndEffort)
+            {
+                cacheManager.DecacheSteps();
+                AddObservedNegativeConditions(UPC);
+
+                CacheMaps.CacheLinks(GroundActionFactory.GroundActions);
+                CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, UPC.goalPredicateList);
                 CacheMaps.CacheAddReuseHeuristic(new State(UPC.initialPredicateList) as IState);
                 UnityGroundActionFactory.PrimaryEffectHack(new State(UPC.initialPredicateList) as IState);
+
+                cacheManager.justCacheMapsAndEffort = true;
+                cacheManager.CacheIt();
+                cacheManager.justCacheMapsAndEffort = false;
+                return;
             }
             else
             {
                 UGAF.PreparePlanner(true);
                 GroundActionFactory.GroundActions = new HashSet<IOperator>(GroundActionFactory.GroundActions).ToList();
+                AddObservedNegativeConditions(UPC);
                 UnityGroundActionFactory.CreateSteps(UPC, UGAF.DecompositionSchemata);
 
                 cacheManager.CacheIt();
@@ -99,8 +146,8 @@ namespace PlanningNamespace
             Debug.Log("Planner and initial plan Prepared");
 
             // MW-Loc-Conf
-            //var solution = Run(initPlan, new ADstar(false), new E0(new AddReuseHeuristic(), true), 60000f);
-            var solution = Run(initialPlan, new ADstar(false), new E3(new AddReuseHeuristic()), 60000f);
+            //var solution = Run(initialPlan, new ADstar(false), new E0(new AddReuseHeuristic(), true), cutoffTime);
+            var solution = Run(initialPlan, new ADstar(false), new E3(new AddReuseHeuristic()), cutoffTime);
             //var solution = Run(initPlan, new BFS(), new Nada(new ZeroHeuristic()), 20000);
             if (solution != null)
             {
