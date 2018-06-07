@@ -343,15 +343,15 @@ namespace PlanningNamespace {
             var root = new Operator(new Predicate(gameObject.name, Terms, true)) as IOperator;
             
             PartialDecomp = new TimelineDecomposition(root, new List<IPredicate>(), cntgs, dcntgs, stepConstraints, dstepConstraints, SubSteps, DSubSteps, orderings, dorderings, links, dlinks, fabVarStepMap);
-            var camOptions = new List<CamAttributesStruct>();
+            var camOptions = new List<CamSchema>();
             if (CameraHost == null)
             {
                 CameraHost = GameObject.FindGameObjectWithTag("Cameras");
             }
             for(int i = 0; i < CameraHost.transform.childCount; i++)
             {
-                var cameraObj = CameraHost.transform.GetChild(i).GetComponent<CamAttributesStruct>();
-                camOptions.Add(cameraObj);
+                var cameraSchema = CameraHost.transform.GetChild(i).GetComponent<CamAttributesStruct>().AsSchema();
+                camOptions.Add(cameraSchema);
             }
             if (LocationHost == null)
             {
@@ -363,7 +363,7 @@ namespace PlanningNamespace {
                 var locationObj = LocationHost.transform.GetChild(i);
                 locationMap[locationObj.name] = locationObj.transform.position;
             }
-            GroundDecomps = PartialDecomp.Compose(0, camOptions, locationMap);
+            GroundDecomps = TimelineDecompositionHelper.Compose(0, PartialDecomp, camOptions, locationMap);
             NumGroundDecomps = GroundDecomps.Count();
             // foreach cndt, create a child gameobject and create a playable director and a control track. for each action in 
         }

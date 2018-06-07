@@ -1,6 +1,7 @@
 ﻿using BoltFreezer.FileIO;
 using BoltFreezer.Interfaces;
 using BoltFreezer.PlanTools;
+using BoltFreezer.Utilities;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -44,8 +45,8 @@ namespace PlanningNamespace
                 }
             }
 
-            BinarySerializer.SerializeObject(CausalMapFileName + ".CachedCausalMap", CacheMaps.CausalMap);
-            BinarySerializer.SerializeObject(ThreatMapFileName + ".CachedThreatMap", CacheMaps.ThreatMap);
+            BinarySerializer.SerializeObject(CausalMapFileName + ".CachedCausalMap", CacheMaps.CausalTupleMap);
+            BinarySerializer.SerializeObject(ThreatMapFileName + ".CachedThreatMap", CacheMaps.ThreatTupleMap);
             try
             {
                 BinarySerializer.SerializeObject(EffortMapFileName + ".CachedEffortMap", HeuristicMethods.visitedPreds);
@@ -98,15 +99,15 @@ namespace PlanningNamespace
 
             try
             {
-                var cmap = BinarySerializer.DeSerializeObject<Dictionary<Literal, List<int>>>(CausalMapFileName + ".CachedCausalMap");
-                CacheMaps.CausalMap = cmap;
+                var cmap = BinarySerializer.DeSerializeObject<TupleMap<IPredicate, List<int>>>(CausalMapFileName + ".CachedCausalMap");
+                CacheMaps.CausalTupleMap = cmap;
 
-                var tcmap = BinarySerializer.DeSerializeObject<Dictionary<Literal, List<int>>>(ThreatMapFileName + ".CachedThreatMap");
-                CacheMaps.ThreatMap = tcmap;
+                var tcmap = BinarySerializer.DeSerializeObject<TupleMap<IPredicate, List<int>>>(ThreatMapFileName + ".CachedThreatMap");
+                CacheMaps.ThreatTupleMap = tcmap;
 
                 try
                 {
-                    var emap = BinarySerializer.DeSerializeObject<Dictionary<Literal, int>>(EffortMapFileName + ".CachedEffortMap");
+                    var emap = BinarySerializer.DeSerializeObject<TupleMap<IPredicate, int>>(EffortMapFileName + ".CachedEffortMap");
                     HeuristicMethods.visitedPreds = emap;
                 }
                 catch
@@ -162,18 +163,4 @@ namespace PlanningNamespace
         }
     }
 
-    public class PropositionalDecompositionalPlanningProblem
-    {
-        public List<IOperator> Actions;
-        public Dictionary<Literal, List<IOperator>> CausalMap;
-        public Dictionary<Literal, List<IOperator>> ThreatMap;
-        public Dictionary<Literal, int> EffortMap;
-        public List<IPredicate> initial;
-        public List<IPredicate> goal;
-
-        public PropositionalDecompositionalPlanningProblem()
-        {
-
-        }
-    }
 }

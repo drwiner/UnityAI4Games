@@ -42,20 +42,21 @@ namespace PlanningNamespace {
             //var baseClone = base.Clone() as PlanStep;
             var newstep = new CamPlanStep(base.Clone() as PlanStep);
 
-            if (CamObject != null && CamObject != "")
-            {
-                var parent = GameObject.Find("Cameras");
-                var camPlanStepsObject = GameObject.Find("CamPlanSteps").gameObject;
-                var possibleCamObj = FindUnderParent(parent.gameObject, CamObject);
-                if (possibleCamObj == null)
-                {
-                    possibleCamObj = FindUnderParent(camPlanStepsObject, CamObject);
-                }
+            //if (CamObject != null && CamObject != "")
+            //{
+            //    var parent = GameObject.Find("Cameras");
+            //    var camPlanStepsObject = GameObject.Find("CamPlanSteps").gameObject;
+            //    var possibleCamObj = FindUnderParent(parent.gameObject, CamObject);
+            //    if (possibleCamObj == null)
+            //    {
+            //        possibleCamObj = FindUnderParent(camPlanStepsObject, CamObject);
+            //    }
 
-                GameObject newGO = GameObject.Instantiate(possibleCamObj);
-                newGO.transform.parent = camPlanStepsObject.transform;
-                newstep.CamObject = newGO.name;
-            }
+            //    GameObject newGO = GameObject.Instantiate(possibleCamObj);
+            //    newGO.transform.parent = camPlanStepsObject.transform;
+            //    newstep.CamObject = newGO.name;
+            //}
+
             if (CamDetails != null)
                 newstep.CamDetails = CamDetails.Clone();
             if (TargetDetails != null)
@@ -64,17 +65,17 @@ namespace PlanningNamespace {
             return newstep;
         }
 
-       public static GameObject FindUnderParent(GameObject parent, string name)
-        {
-            for(int i = 0; i < parent.transform.childCount; i++)
-            {
-                var childObject = parent.transform.GetChild(i).gameObject;
-                if (childObject.name.Equals(name))
-                {
-                    return childObject;
-                }
-            }
-            return null;
-        }
+        //public static GameObject FindUnderParent(GameObject parent, string name)
+        //{
+        //    for (int i = 0; i < parent.transform.childCount; i++)
+        //    {
+        //        var childObject = parent.transform.GetChild(i).gameObject;
+        //        if (childObject.name.Equals(name))
+        //        {
+        //            return childObject;
+        //        }
+        //    }
+        //    return null;
+        //}
     }
 }

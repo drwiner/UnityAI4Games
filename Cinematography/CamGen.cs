@@ -6,6 +6,7 @@ using Cinemachine;
 using Cinematography;
 using PlanningNamespace;
 using GraphNamespace;
+using System;
 
 namespace CameraNamespace {
 
@@ -51,7 +52,7 @@ namespace CameraNamespace {
             CinematographyAttributes.lensFovData = ProCamsLensDataTable.Instance.GetFilmFormat("35mm 16:9 Aperture (1.78:1)").GetLensKitData(0)._fovDataset;
             CinematographyAttributes.standardNoise = Instantiate(Resources.Load("Handheld_tele_mild", typeof(NoiseSettings))) as NoiseSettings;
 
-            FrameTypeList = new List<FramingType>() { FramingType.ExtremeLong, FramingType.Full, FramingType.Waist, FramingType.ExtremeCloseUp };
+            //FrameTypeList = new List<FramingType>() { FramingType.ExtremeLong, FramingType.Full, FramingType.Waist, FramingType.ExtremeCloseUp };
 
             // problem information may not be useful here
             problemStates = GameObject.FindGameObjectWithTag("Problem").GetComponent<UnityProblemCompiler>();
@@ -139,16 +140,32 @@ namespace CameraNamespace {
 
             foreach (var loc in tileMap.Nodes)
             {
-                foreach (var scale in FrameTypeList)
+                foreach (FramingType frame in Enum.GetValues(typeof(FramingType)))
                 {
-                    for (int orient = 0; orient < 4; orient++)
+                    if (frame.Equals(FramingType.None))
                     {
-                        for (int vangle = 0; vangle < 3; vangle++)
+                        continue;
+                    }
+                    foreach (Orient orient in Enum.GetValues(typeof(Orient)))
+                    {
+                        if (orient.Equals(Orient.None))
                         {
-                            for (int hangle = 0; hangle < 8; hangle++)
+                            continue;
+                        }
+                        foreach (Vangle vangle in Enum.GetValues(typeof(Vangle)))
+                        {
+                            if (vangle.Equals(Vangle.None))
                             {
+                                continue;
+                            }
+                            foreach (Hangle hangle in Enum.GetValues(typeof(Hangle)))
+                            {
+                                if (hangle.Equals(Hangle.None))
+                                {
+                                    continue;
+                                }
                                 // Create Camera
-                                var Cam = CreateCamera(loc, scale, orient, hangle, vangle);
+                                var Cam = CreateCamera(loc, frame, orient, hangle, vangle);
                                 cameraList.Add(Cam);
                                 Cam.transform.parent = this.transform;
                                 Cam.SetActive(false);
@@ -181,7 +198,7 @@ namespace CameraNamespace {
             }
         }
 
-        public GameObject CreateCamera(TileNode loc, FramingType scale, int orient, int hangle, int vangle)
+        public GameObject CreateCamera(TileNode loc, FramingType scale, Orient orient, Hangle hangle, Vangle vangle)
         {
             //Debug.Log(scale);
             GameObject camHost = new GameObject();
@@ -191,7 +208,7 @@ namespace CameraNamespace {
             var cc = cva.AddCinemachineComponent<CinemachineComposer>();
             var cbmcp = cva.AddCinemachineComponent<CinemachineBasicMultiChannelPerlin>();
             var camattributes = camHost.AddComponent<CamAttributesStruct>();
-            camattributes.Set(scale, loc.transform.gameObject.name, CinematographyAttributes.orientCode[orient], CinematographyAttributes.horizontalAngleCode[hangle], CinematographyAttributes.verticalAngleCode[vangle]);
+            camattributes.Set(scale, loc.transform.gameObject.name, orient, hangle, vangle);
 
             // composer parameters TODO: tweak via separate gameobject component structure
             cc.m_HorizontalDamping = 10;
@@ -216,7 +233,7 @@ namespace CameraNamespace {
             cbmcp.m_FrequencyGain = 1f;
 
             // worldDirectionOf Camera relative to location transform
-            var camTransformDirection = DegToVector3(camattributes.targetOrientation + camattributes.hangle);
+            var camTransformDirection = DegToVector3(camattributes.OrientInt + camattributes.HangleInt);
 
             // calculate where to put camera
             var fakeTarget = CreateFakeTarget(actors[0].gameObject, loc.transform);
@@ -226,7 +243,7 @@ namespace CameraNamespace {
 
             // Calculate Camera Position
             camHost.transform.position = loc.transform.position + camTransformDirection * camDist;
-            var height = CinematographyAttributes.SolveForY(loc.transform.position, camHost.transform.position, 0.5f, camattributes.vangle);
+            var height = CinematographyAttributes.SolveForY(loc.transform.position, camHost.transform.position, 0.5f, camattributes.VangleInt);
             camHost.transform.position = new Vector3(camHost.transform.position.x, height, camHost.transform.position.z);
 
             // Gives starting orientation of camera. At planning time, a "lookAt" parameter is set to specific target.

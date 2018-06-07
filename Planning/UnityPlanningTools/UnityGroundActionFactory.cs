@@ -128,6 +128,7 @@ namespace PlanningNamespace
         public static void AddCompositeStepsToGroundActionFactory(List<IPredicate> Initial, List<IPredicate> Goal, List<CompositeSchedule> compositeSteps)
         {
             var originalOps = GroundActionFactory.GroundActions;
+            //CacheMaps.CacheLinks(originalOps);
             var IOpList = new List<IOperator>();
             foreach (var compstep in compositeSteps)
             {
@@ -142,13 +143,14 @@ namespace PlanningNamespace
             // Amonst themselves
             CacheMaps.CacheLinks(IOpList);
 
-            // as antecedants to the originals
-            CacheMaps.CacheLinks(IOpList, originalOps);
-
             // as consequents to the originals
             CacheMaps.CacheLinks(originalOps, IOpList);
 
+            // as antecedants to the originals
+            CacheMaps.CacheLinks(IOpList, originalOps);
+
             // as antecedants to goal conditions
+            CacheMaps.CacheGoalLinks(originalOps, Goal);
             CacheMaps.CacheGoalLinks(IOpList, Goal);
         }
 
@@ -424,7 +426,7 @@ namespace PlanningNamespace
             {
                 if (GroundActionFactory.GroundActions != null)
                 {
-                    if (HeuristicMethods.visitedPreds == null || HeuristicMethods.visitedPreds.Count == 0)
+                    if (HeuristicMethods.visitedPreds == null || HeuristicMethods.visitedPreds.Get(true).Count == 0)
                     {
                         CacheMaps.CacheAddReuseHeuristic(initPlan.Initial);
                         //PrimaryEffectHack(initPlan.Initial);
@@ -464,7 +466,7 @@ namespace PlanningNamespace
 
             // Detect Statics
             Debug.Log("Detecting Statics");
-            GroundActionFactory.DetectStatics(CacheMaps.CausalMap, CacheMaps.ThreatMap);
+            GroundActionFactory.DetectStatics(CacheMaps.CausalTupleMap, CacheMaps.ThreatTupleMap);
 
 
             Debug.Log("Caching Heuristic costs");
@@ -527,26 +529,30 @@ namespace PlanningNamespace
         /// <returns></returns>
         public static void PrimaryEffectHack(IState InitialState)
         {
-            var initialMap = new Dictionary<Literal, int>();
+            var initialMap = new TupleMap<IPredicate, int>();
             var primaryEffectsInInitialState = new List<IPredicate>();
             foreach(var item in InitialState.Predicates)
             {
                 if (IsPrimaryEffect(item))
                 {
                     primaryEffectsInInitialState.Add(item);
-                    initialMap[new Literal(item)] = 0;
+                    initialMap.Get(item.Sign)[item] = 0;
                 }
             }
 
             var heurDict = PrimaryEffectRecursiveHeuristicCache(initialMap, primaryEffectsInInitialState);
 
-            foreach(var keyvalue in heurDict)
+            foreach(var keyvalue in heurDict.Get(true))
             {
-                HeuristicMethods.visitedPreds[keyvalue.Key] = keyvalue.Value;
+                HeuristicMethods.visitedPreds.Get(true)[keyvalue.Key] = keyvalue.Value;
+            }
+            foreach(var keyvalue in heurDict.Get(false))
+            {
+                HeuristicMethods.visitedPreds.Get(false)[keyvalue.Key] = keyvalue.Value;
             }
         }
 
-        private static Dictionary<Literal, int> PrimaryEffectRecursiveHeuristicCache(Dictionary<Literal, int> currentMap, List<IPredicate> InitialConditions)
+        private static TupleMap<IPredicate, int> PrimaryEffectRecursiveHeuristicCache(TupleMap<IPredicate, int> currentMap, List<IPredicate> InitialConditions)
         {
             var initiallyRelevant = new List<IOperator>();
             var CompositeOps = GroundActionFactory.GroundActions.Where(act => act.Height > 0);
@@ -581,34 +587,32 @@ namespace PlanningNamespace
                 int thisStepsValue = 0;
                 foreach (var precon in newStep.Preconditions)
                 {
-                    var preLiteral = new Literal(precon);
                     if (IsPrimaryEffect(precon))
                     {
-                        thisStepsValue += currentMap[preLiteral];
+                        thisStepsValue += currentMap.Get(precon.Sign)[precon];
                     }
                     else
                     {
-                        thisStepsValue += HeuristicMethods.visitedPreds[preLiteral];
+                        thisStepsValue += HeuristicMethods.visitedPreds.Get(precon.Sign)[precon];
                     }
                 }
 
                 foreach (var eff in newStep.Effects)
                 {
-                    var effLiteral = new Literal(eff);
                     if (!IsPrimaryEffect(eff))
                     {
                         continue;
                     }
 
                     // ignore effects we've already seen; these occur "earlier" in planning graph
-                    if (currentMap.ContainsKey(effLiteral))
+                    if (currentMap.Get(eff.Sign).ContainsKey(eff))
                         continue;
 
                     // If we make it this far, then we've reached an unexplored literal effect
                     toContinue = true;
 
                     // The current value of this effect is 1 (this new step) + the sum of the preconditions of this step in the map.
-                    currentMap[effLiteral] = 1 + thisStepsValue;
+                    currentMap.Get(eff.Sign)[eff] = 1 + thisStepsValue;
 
                     // Add this effect to the new initial Condition for subsequent round
                     InitialConditions.Add(eff);

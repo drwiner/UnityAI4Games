@@ -189,7 +189,7 @@ namespace CameraNamespace
 
             foreach (var cam in camCollection.CameraList)
             {
-                if (cschema.IsConsistent(cam.GetComponent<CamAttributesStruct>()))
+                if (cschema.IsConsistent(cam.GetComponent<CamAttributesStruct>().AsSchema()))
                 {
                     cndts.Add(cam);
                 }

@@ -50,7 +50,7 @@ public class CamSchemaTest : MonoBehaviour {
         {
             checkConsistency = false;
             var camAtt = camObject.GetComponent<CamAttributesStruct>();
-            if (camSchema.IsConsistent(camAtt))
+            if (camSchema.IsConsistent(camAtt.AsSchema()))
             {
                 Debug.Log("Consistent");
                 

@@ -14,10 +14,10 @@ namespace PlanningNamespace
     [Serializable]
     public class PlannerScheduler : PlanSpacePlanner, IPlanner
     {
-
+        
         public PlannerScheduler(IPlan initialPlan, ISelection _selection, ISearch _search) : base(initialPlan, _selection, _search, false)
         {
-
+            
         }
 
         public new static IPlan CreateInitialPlan(ProblemFreezer PF)
@@ -46,21 +46,37 @@ namespace PlanningNamespace
         public new void Insert(IPlan plan)
         {
             var planschedule = plan as PlanSchedule;
+
+            long before = 0;
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            before = watch.ElapsedMilliseconds;
             if (planschedule.Cntgs.HasFault(plan.Orderings))
             {
+                LogTime("CheckFaults", watch.ElapsedMilliseconds - before);
                 return;
             }
+            LogTime("CheckFaults", watch.ElapsedMilliseconds - before);
+
             base.Insert(plan);
         }
 
         public new void AddStep(IPlan plan, OpenCondition oc)
         {
+            long before = 0;
+            var watch = System.Diagnostics.Stopwatch.StartNew();
 
             foreach (var cndt in CacheMaps.GetCndts(oc.precondition))
             {
                 if (cndt == null)
                     continue;
+                if (cndt.Height == 0)
+                {
+                    continue;
+                }
 
+                before = watch.ElapsedMilliseconds;
+                
+                
                 var planClone = plan.Clone() as PlanSchedule;
                 IPlanStep newStep;
                 if (cndt.Height > 0)
@@ -76,15 +92,29 @@ namespace PlanningNamespace
                 else
                 {
                     // only add composite steps...
-                    continue;
+                    //continue;
                     newStep = new PlanStep(cndt.Clone() as IOperator)
                     {
                         Depth = oc.step.Depth
                     };
                 }
-                //newStep.Height = cndt.Height;
+                LogTime("CloneCndt", watch.ElapsedMilliseconds - before);
+
+                
+
+                before = watch.ElapsedMilliseconds;
                 planClone.Insert(newStep);
+                LogTime("InsertDecomp", watch.ElapsedMilliseconds - before);
+
+                //newStep.Height = cndt.Height;
+                
+
+               // planClone.Insert(newStep);
+                
+
+                before = watch.ElapsedMilliseconds;
                 planClone.Repair(oc, newStep);
+                LogTime("RepairDecomp", watch.ElapsedMilliseconds - before);
 
                 // check if inserting new Step (with orderings given by Repair) add cndts/risks to existing open conditions, affecting their status in the heap
                 //planClone.Flaws.UpdateFlaws(planClone, newStep);
@@ -101,8 +131,15 @@ namespace PlanningNamespace
                         planClone.Orderings.Insert(oc.step.InitCndt, newStep);
                     }
                 }
+                
+
+                before = watch.ElapsedMilliseconds;
                 planClone.DetectThreats(newStep);
+                LogTime("DetectThreats", watch.ElapsedMilliseconds - before);
+
+                before = watch.ElapsedMilliseconds;
                 Insert(planClone);
+                LogTime("InsertPlan", watch.ElapsedMilliseconds - before);
             }
         }
 
