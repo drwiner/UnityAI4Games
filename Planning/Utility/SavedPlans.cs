@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿using BoltFreezer.Interfaces;
+using BoltFreezer.Utilities;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,7 +11,7 @@ namespace PlanningNamespace
     public class SavedPlans : MonoBehaviour
     {
 
-        public List<ListWrapper> Saved;
+        public static List<ListWrapper> Saved;
 
         public bool reset;
 
@@ -23,18 +25,18 @@ namespace PlanningNamespace
             }
         }
 
-        public List<string> Retrieve(int index)
+        public Tuple<List<string>, List<IPlanStep>> Retrieve(int index)
         {
-            return Saved[index].Plan;
+            return new Tuple<List<string>, List<IPlanStep>>(Saved[index].PlanSteps, Saved[index].Plan);
         }
 
-        public void AddPlan(List<string> planToSave)
+        public void AddPlan(List<string> planToSave, List<IPlanStep> planStepsToSave)
         {
             if (Saved == null)
             {
                 Saved = new List<ListWrapper>();
             }
-            Saved.Add(new ListWrapper(planToSave));
+            Saved.Add(new ListWrapper(planToSave, planStepsToSave));
         }
     }
 
@@ -42,10 +44,12 @@ namespace PlanningNamespace
     [System.Serializable]
     public class ListWrapper
     {
-        public List<string> Plan;
-        public ListWrapper(List<string> plan)
+        public List<string> PlanSteps;
+        public List<IPlanStep> Plan;
+        public ListWrapper(List<string> plan, List<IPlanStep> _plan)
         {
-            Plan = plan;
+            PlanSteps = plan;
+            Plan = _plan;
         }
     }
 

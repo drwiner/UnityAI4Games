@@ -222,11 +222,11 @@ MonoBehaviour:
   camSchema:
     scale: 3
     targetLocation: 
-    targetOrientation: -1
-    hangle: 45
-    vangle: 0
+    targetOrientation: 0
+    hangle: 2
+    vangle: 2
   targetSchema:
-    orient: -1
+    orient: 0
     location: 
     ActionSegs:
     - actionVarName: Action1

@@ -89,6 +89,9 @@ namespace PlanningNamespace
         public void DeCacheIt()
         {
             Parser.path = @"D:\documents\frostbow\";
+            BoltFreezer.Utilities.Logger.InitiateTimer();
+            BoltFreezer.Utilities.Logger.Active = true;
+            BoltFreezer.Utilities.Logger.SetDirectory(@"D:\documents\frostbow\Results\UnityBlocksWorld\");
             DecacheSteps();
 
             UnityPlanningInterface.AddObservedNegativeConditions(UPC);

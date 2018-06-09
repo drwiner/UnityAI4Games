@@ -10,6 +10,7 @@ using BoltFreezer.Interfaces;
 using System.Linq;
 using System;
 using Cinemachine;
+using BoltFreezer.Camera;
 
 [ExecuteInEditMode]
 public class CamSchemaTest : MonoBehaviour {

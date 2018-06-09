@@ -13,6 +13,7 @@ using Cinemachine;
 using TimelineClipsNamespace;
 using BoltFreezer.DecompTools;
 using BoltFreezer.Utilities;
+using BoltFreezer.Camera;
 
 namespace PlanningNamespace {
 

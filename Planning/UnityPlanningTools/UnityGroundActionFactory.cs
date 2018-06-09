@@ -8,6 +8,8 @@ using BoltFreezer.Interfaces;
 using BoltFreezer.FileIO;
 using BoltFreezer.PlanSpace;
 using BoltFreezer.Utilities;
+using BoltFreezer.Scheduling;
+using BoltFreezer.DecompTools;
 
 namespace PlanningNamespace
 {
@@ -113,13 +115,12 @@ namespace PlanningNamespace
         {
             foreach (var unitydecomp in DecompositionSchemata)
             {
-                if (unitydecomp.NumGroundDecomps == 0)
-                {
-                    unitydecomp.Read();
-                    unitydecomp.Assemble();
-                    unitydecomp.Filter();
-                    Debug.Log("Read,Assemble, and Filter for unity decomp: " + unitydecomp.name);
-                }
+                unitydecomp.GroundDecomps = new List<TimelineDecomposition>();
+                unitydecomp.reset = true;
+                unitydecomp.Read();
+                unitydecomp.Assemble();
+                unitydecomp.Filter();
+                Debug.Log("Read,Assemble, and Filter for unity decomp: " + unitydecomp.name);
             }
             var compositeSteps = GroundDecompositionsToCompositeSteps(DecompositionSchemata);
             AddCompositeStepsToGroundActionFactory(UPC.initialPredicateList, UPC.goalPredicateList, compositeSteps);
@@ -233,6 +234,7 @@ namespace PlanningNamespace
                     double latestTimeAccountedFor;
                     bool observedEnding;
                     var observedEffectsList = new List<IPredicate>();
+                    var observedEffectTuples = new List<Tuple<IPredicate, IPlanStep>>();
                     for (int i =0; i < gdecomp.SubSteps.Count; i++)
                     //foreach (var action in gdecomp.SubSteps)
                     {
@@ -298,13 +300,29 @@ namespace PlanningNamespace
                         {
                             foreach (var eff in action.Effects)
                             {
+                                if (observedEffectsList.Contains(eff))
+                                {
+
+                                    foreach(var tupleItem in observedEffectTuples)
+                                    {
+                                        if (tupleItem.First.Equals(eff))
+                                        {
+                                            observedEffectTuples.Remove(tupleItem);
+                                            observedEffectTuples.Add(new Tuple<IPredicate, IPlanStep>(eff, action));
+                                            break;
+                                        }
+                                    }
+                                }
+
                                 var reversedEff = eff.GetReversed();
                                 if (observedEffectsList.Contains(reversedEff))
                                 {
                                     observedEffectsList.Remove(reversedEff);
                                 }
+                                else
                                 {
                                     observedEffectsList.Add(eff);
+                                    observedEffectTuples.Add(new Tuple<IPredicate, IPlanStep>(eff, action));
                                 }
                             }
 
@@ -312,6 +330,11 @@ namespace PlanningNamespace
                             missingIntervalsInActions.Add(new Tuple<IPlanStep, List<Tuple<double, double>>>(action, missingTimes));
                         }
                     }
+
+                    var initialStep = new PlanStep(new Operator("DummyInit", new List<IPredicate>(), new List<IPredicate>()));
+                    var goalStep = new PlanStep(new Operator("DummyGoal", new List<IPredicate>(), new List<IPredicate>()));
+                    var newLinksWithInitial = new List<CausalLink<IPlanStep>>();
+                    var newLinksWithGoal = new List<CausalLink<IPlanStep>>();
 
                     /* Preconditions
                         * 
@@ -327,6 +350,9 @@ namespace PlanningNamespace
                             var obsTerm = new Predicate("obs", new List<ITerm>() { precon as ITerm }, true);
                             preconditions.Add(obsTerm);
                             preconditions.Add(precon);
+                            initialStep.Effects.Add(precon);
+                            newLinksWithInitial.Add(new CausalLink<IPlanStep>(precon, initialStep, stepAction));
+                            stepAction.OpenConditions.Remove(precon);
                         }
                     }
                     /* Effects
@@ -334,14 +360,27 @@ namespace PlanningNamespace
                         * foreach action that is NOT observed to end, give effect that we observed it start
                         * foreach action that IS observed to end, give effect that we observed its effects
                         */
-
+                    
                     var effects = CreatePredicatesWithStepTermsViaName(StepsNotObservedToEnd, "obs-starts");
                     foreach (var observedEffect in observedEffectsList)
                     {
+                        IPlanStep actingStep = new PlanStep();
+                        foreach(var tupleItem in observedEffectTuples)
+                        {
+                            if (tupleItem.First.Equals(observedEffect))
+                            {
+                                actingStep = tupleItem.Second;
+                                break;
+                            }
+                        }
                         // cast predicate as term?
                         var obsTerm = new Predicate("obs", new List<ITerm>() { observedEffect as ITerm}, true);
                         effects.Add(obsTerm);
                         effects.Add(observedEffect);
+
+                        goalStep.Preconditions.Add(observedEffect);
+                        newLinksWithGoal.Add(new CausalLink<IPlanStep>(observedEffect, actingStep, goalStep));
+                        goalStep.OpenConditions.Remove(observedEffect);
                     }
                         
                     // Create a composite step
@@ -349,8 +388,28 @@ namespace PlanningNamespace
                     compOp.Height = 1;
                     compOp.NonEqualities = new List<List<ITerm>>();
                     var comp = new CompositeSchedule(compOp);
+                    // this also limits preconditions and effects
+                    comp.InitialStep = initialStep;
+                    comp.GoalStep = goalStep;
                     comp.ApplyDecomposition(gdecomp.Clone() as TimelineDecomposition);
+                    
 
+                    foreach(var link in newLinksWithInitial)
+                    {
+                        comp.SubLinks.Add(link);
+                        link.Tail.OpenConditions.Remove(link.Predicate);
+                    }
+
+                    foreach(var link in newLinksWithGoal)
+                    {
+                        comp.SubLinks.Add(link);
+                        link.Tail.OpenConditions.Remove(link.Predicate);
+                    }
+
+                    //foreach(var tup in newLinksWithInitial)
+                    //{
+                    //    comp.SubLinks.Add(new CausalLink<IPlanStep>(tup.First, comp.InitialStep, tup.Second));
+                    //}
                     // Add new composite step to list and add its string component to displayable gameobject component
                     compositeSteps.Add(comp);
                 }

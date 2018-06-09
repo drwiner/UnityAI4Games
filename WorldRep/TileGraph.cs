@@ -39,6 +39,10 @@ namespace GraphNamespace
                 var go = transform.GetChild(i).gameObject;
                 go.name = string.Format("{0}{1}", "L", i.ToString());
                 TileNode tn = transform.GetChild(i).GetComponent<TileNode>();
+                if (!transform.GetChild(i).gameObject.activeSelf)
+                {
+                    continue;
+                }
                 Nodes.Add(tn);
 
                 for (int j = 0; j < transform.childCount; j++)
@@ -49,6 +53,10 @@ namespace GraphNamespace
                     }
 
                     TileNode other_node = transform.GetChild(j).GetComponent<TileNode>();
+                    if (!transform.GetChild(j).gameObject.activeSelf)
+                    {
+                        continue;
+                    }
 
                     if (IsAdjacent(tn.transform.position, other_node.transform.position))
                     {

@@ -3,7 +3,7 @@ using BoltFreezer.FileIO;
 using BoltFreezer.Interfaces;
 using BoltFreezer.PlanSpace;
 using BoltFreezer.PlanTools;
-
+using BoltFreezer.Scheduling;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +21,7 @@ namespace PlanningNamespace
         public CacheManager cacheManager;
         public bool UseCompositeSteps;
         public bool makePlan;
-        public bool DeCacheIt;
+        public bool DeCacheIt = false;
         public bool savePlan;
         public int retrievePlan;
         public bool getPlan;
@@ -30,6 +30,7 @@ namespace PlanningNamespace
         public float cutoffTime = 10000;
 
         public List<string> PlanSteps;
+        public List<IPlanStep> Plan;
 
        // private List<string> GroundSteps;
         private SavedPlans SavedPlansComponent;
@@ -58,7 +59,7 @@ namespace PlanningNamespace
                 if (SavedPlansComponent == null) 
                     SavedPlansComponent = this.gameObject.GetComponent<SavedPlans>();
 
-                SavedPlansComponent.AddPlan(PlanSteps);
+                SavedPlansComponent.AddPlan(PlanSteps, Plan);
             }
             if (getPlan)
             {
@@ -66,9 +67,11 @@ namespace PlanningNamespace
                 if (SavedPlansComponent == null)
                     SavedPlansComponent = this.gameObject.GetComponent<SavedPlans>();
 
-                if (retrievePlan <= SavedPlansComponent.Saved.Count() - 1)
+                if (retrievePlan <= SavedPlans.Saved.Count() - 1)
                 {
-                    PlanSteps = SavedPlansComponent.Retrieve(retrievePlan);
+                    var tup = SavedPlansComponent.Retrieve(retrievePlan);
+                    PlanSteps = tup.First;
+                    Plan = tup.Second;
                 }
             }
 
@@ -112,7 +115,7 @@ namespace PlanningNamespace
 
             if (DeCacheIt)
             {
-                DeCacheIt = false;
+                //DeCacheIt = false;
                 cacheManager.DeCacheIt();
             }
             else if (justCacheMapsAndEffort)
@@ -141,22 +144,25 @@ namespace PlanningNamespace
             }
 
             var initialPlan = PlannerScheduler.CreateInitialPlan(UPC.initialPredicateList, UPC.goalPredicateList);
-
+            
         
             Debug.Log("Planner and initial plan Prepared");
 
             // MW-Loc-Conf
-            var solution = Run(initialPlan, new ADstar(false), new E0(new AddReuseHeuristic(), true), cutoffTime);
+            var solution = Run(initialPlan, new ADstar(false), new E0(new NumOpenConditionsHeuristic(), true), cutoffTime);
+            //var solution = Run(initialPlan, new ADstar(false), new E0(new AddReuseHeuristic(), true), cutoffTime);
             //var solution = Run(initialPlan, new ADstar(false), new E3(new AddReuseHeuristic()), cutoffTime);
             //var solution = Run(initPlan, new BFS(), new Nada(new ZeroHeuristic()), 20000);
             if (solution != null)
             {
                 //Debug.Log(solution.ToStringOrdered());
                 PlanSteps = new List<string>();
+                Plan = new List<IPlanStep>();
                 foreach (var step in solution.Orderings.TopoSort(solution.InitialStep))
                 {
                     Debug.Log(step);
                     PlanSteps.Add(step.ToString());
+                    Plan.Add(step);
                 }
             }
             else
@@ -164,6 +170,9 @@ namespace PlanningNamespace
                 
                 Debug.Log("No good");
             }
+
+            //BoltFreezer.Utilities.Logger.WriteItemsFromDatabaseToFile("HeuristicOld");
+         //   BoltFreezer.Utilities.Logger.WriteItemsFromDatabaseToFile("HeuristicNew");
         }
 
         

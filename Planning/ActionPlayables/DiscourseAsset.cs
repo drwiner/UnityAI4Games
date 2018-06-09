@@ -1,4 +1,5 @@
-﻿using CameraNamespace;
+﻿using BoltFreezer.Camera;
+using CameraNamespace;
 using PlanningNamespace;
 using System;
 using System.Collections.Generic;

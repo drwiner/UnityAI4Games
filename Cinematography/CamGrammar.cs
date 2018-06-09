@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BoltFreezer.Camera;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;

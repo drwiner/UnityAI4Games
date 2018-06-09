@@ -220,13 +220,13 @@ MonoBehaviour:
   m_Name: DiscourseAsset
   m_EditorClassIdentifier: 
   camSchema:
-    scale: 3
+    scale: 4
     targetLocation: 
-    targetOrientation: -1
-    hangle: 45
-    vangle: 0
+    targetOrientation: 0
+    hangle: 3
+    vangle: 1
   targetSchema:
-    orient: -1
+    orient: 0
     location: 
     ActionSegs:
     - actionVarName: Action1

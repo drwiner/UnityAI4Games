@@ -7,6 +7,7 @@ using Cinematography;
 using PlanningNamespace;
 using GraphNamespace;
 using System;
+using BoltFreezer.Camera.CameraEnums;
 
 namespace CameraNamespace {
 
@@ -217,7 +218,16 @@ namespace CameraNamespace {
             cc.m_DeadZoneWidth = 0.25f;
             cc.m_SoftZoneWidth = 0.5f;
 
-            var framing_data = FramingParameters.FramingTable[scale];
+            FramingParameters framing_data;
+            try
+            {
+                framing_data = FramingParameters.FramingTable[scale];
+            }
+            catch
+            {
+                Debug.Log("here");
+                throw new System.Exception();
+            }
             // FStop
             cbod.IndexOfFStop = CinematographyAttributes.fStops[framing_data.DefaultFStop];
             // Lens

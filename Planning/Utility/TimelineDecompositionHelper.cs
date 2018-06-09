@@ -1,4 +1,6 @@
-﻿using BoltFreezer.DecompTools;
+﻿using BoltFreezer.Camera;
+using BoltFreezer.Camera.CameraEnums;
+using BoltFreezer.DecompTools;
 using BoltFreezer.Interfaces;
 using BoltFreezer.PlanTools;
 using BoltFreezer.Utilities;
