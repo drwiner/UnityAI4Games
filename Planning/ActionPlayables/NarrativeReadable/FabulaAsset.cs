@@ -1,4 +1,5 @@
-﻿using PlanningNamespace;
+﻿using BoltFreezer.Camera.CameraEnums;
+using PlanningNamespace;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -17,7 +18,7 @@ namespace TimelineClipsNamespace
         [SerializeField]
         public List<string> Constraints = new List<string>();
         [SerializeField]
-        public int agentOrient = - 1;
+        public Orient agentOrient = Orient.None;
         [SerializeField]
         public string location = "";
 

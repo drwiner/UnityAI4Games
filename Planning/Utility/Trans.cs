@@ -1,11 +1,15 @@
-﻿ using UnityEngine;
+﻿using System;
+using UnityEngine;
  
+[Serializable]
  public class Trans
  {
- 
-     public Vector3 position;
-     public Quaternion rotation;
-     public Vector3 localScale;
+    [SerializeField]
+    public Vector3 position;
+    [SerializeField]
+    public Quaternion rotation;
+    [SerializeField]
+    public Vector3 localScale;
  
      public Trans (Vector3 newPosition, Quaternion newRotation, Vector3 newLocalScale)
      {

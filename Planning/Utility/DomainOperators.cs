@@ -41,6 +41,10 @@ namespace PlanningNamespace
             DomainOps = new List<Operator>();
             for (int i = 0; i < transform.childCount; i++)
             {
+                if (!transform.GetChild(i).gameObject.activeSelf)
+                {
+                    continue;
+                }
                 var opParam = transform.GetChild(i).GetComponent<UnityActionOperator>();
                 if (opParam == null)
                 {

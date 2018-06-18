@@ -19,6 +19,9 @@ namespace GraphNamespace
         [SerializeField]
         public float adjacent_distance = .6f;
 
+        public bool calculateEdgesByDistance;
+        public bool makeEdgesByHand = false;
+
         void Start()
         {
             CalculateEdges();
@@ -26,7 +29,15 @@ namespace GraphNamespace
 
         public void Update()
         {
-            CalculateEdges();
+            if (makeEdgesByHand)
+            {
+
+            }
+            else if (calculateEdgesByDistance)
+            {
+                calculateEdgesByDistance = false;
+                CalculateEdges();
+            }
         }
 
         public void CalculateEdges()
@@ -92,6 +103,22 @@ namespace GraphNamespace
                 return true;
             }
             return false;
+        }
+
+        public Edge FindRelevantEdge(string location1, string location2)
+        {
+            foreach(var edge in Edges)
+            {
+                if (edge.S.name.Equals(location1) && edge.T.name.Equals(location2))
+                {
+                    return edge;
+                }
+                if (edge.T.name.Equals(location1) && edge.S.name.Equals(location2))
+                {
+                    return edge;
+                }
+            }
+            return null;
         }
 
     }

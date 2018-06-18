@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using PlanningNamespace;
+using UnityEngine;
 using UnityEngine.Playables;
 
 namespace TimelineClipsNamespace
@@ -26,6 +27,7 @@ namespace TimelineClipsNamespace
             while (ft < _pd.time)
             {
                 _pd.time -= .1f;
+                _pd.Evaluate();
             }
         }
 
@@ -34,6 +36,7 @@ namespace TimelineClipsNamespace
             while (ft > _pd.time)
             {
                 _pd.time += .1f;
+                _pd.Evaluate();
             }
         }
 
@@ -46,7 +49,15 @@ namespace TimelineClipsNamespace
             }
             else
             {
-                Rewind(_newTime);
+                var UPC = GameObject.FindGameObjectWithTag("Problem").GetComponent<UnityProblemCompiler>();
+                Rewind(_newTime+.06f);
+                if (_newTime == 0)
+                {
+                    UPC.SetInitialState();
+                }
+               // UPC.SetInitialState();
+                //Rewind(_newTime - 0.06f);
+               // FastForward(_newTime);
             }
 
             Debug.Log("setFabTime: " + _pd.time + " and: " + _pd.state);

@@ -26,7 +26,7 @@ namespace SteeringNamespace
         public bool steering = false;
         public bool orienting = false;
         public bool playingClip = false;
-        private bool initiatedExternally = false;
+        public bool initiatedExternally = false;
 
         // clip attributes
         public Vector3 currentGoal;
@@ -73,7 +73,7 @@ namespace SteeringNamespace
             if (initiatedExternally)
                 return;
 
-            PD = GameObject.FindGameObjectWithTag("ExecuteTimeline").GetComponent<PlayableDirector>();
+            PD = GameObject.FindGameObjectWithTag("FabulaTimeline").GetComponent<PlayableDirector>();
             SP = GetComponent<SteeringParams>();
             KinematicBody = GetComponent<Kinematic>();
             SteerList = new List<List<SteeringPlayable>>();
@@ -265,6 +265,17 @@ namespace SteeringNamespace
             currentGoal = target;
             playingClip = true;
             orienting = true;
+            steering = false;
+
+            var direction = currentGoal - transform.position;
+            var currentVelocity = direction.normalized * SP.MAXSPEED;
+            KinematicBody.setOrientation(KinematicBody.getNewOrientation(currentVelocity));
+            transform.rotation = Quaternion.Euler(0f, KinematicBody.getOrientation() * Mathf.Rad2Deg - 90f, 0f);
+            // var targetOrientation = KinematicBody.getNewOrientation(currentGoal - transform.position);
+            //rotation = goal.eulerAngles;
+            //  var rotation = targetOrientation - KinematicBody.getOrientation();
+
+            // return rotation;
         }
 
         public void InformMasterIsPlaying(int whichList, bool isPlaying)
@@ -318,6 +329,12 @@ namespace SteeringNamespace
         // Update is called once per frame
         void Update()
         {
+
+            if (initiatedExternally && SP == null)
+            {
+                initiatedExternally = false;
+                InitiateExternally();
+            }
             if (!initiatedExternally)
             {
                 steering = false;
@@ -347,7 +364,8 @@ namespace SteeringNamespace
                 kso = KinematicBody.updateSteering(new DynoSteering(force, torque), Time.deltaTime);
                 transform.position = new Vector3(kso.position.x, transform.position.y, kso.position.z);
 
-                transform.rotation = Quaternion.Euler(0f, kso.orientation * Mathf.Rad2Deg, 0f);
+                var eulerAngles = Quaternion.Euler(0f, kso.orientation * Mathf.Rad2Deg, 0f).eulerAngles;
+                transform.eulerAngles = new Vector3(transform.rotation.x, eulerAngles.y, transform.rotation.z);
 
                 // Gets set to true for each frame its in clip
                 playingClip = false;

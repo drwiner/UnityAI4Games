@@ -347,12 +347,19 @@ namespace PlanningNamespace
                     {
                         foreach(var precon in stepAction.Preconditions)
                         {
-                            var obsTerm = new Predicate("obs", new List<ITerm>() { precon as ITerm }, true);
-                            preconditions.Add(obsTerm);
+                            //var obsTerm = new Predicate("obs", new List<ITerm>() { precon as ITerm }, true);
+                           // preconditions.Add(obsTerm);
                             preconditions.Add(precon);
                             initialStep.Effects.Add(precon);
                             newLinksWithInitial.Add(new CausalLink<IPlanStep>(precon, initialStep, stepAction));
                             stepAction.OpenConditions.Remove(precon);
+                        }
+                    }
+                    foreach(var precon in gdecomp.Preconditions)
+                    {
+                        if (!preconditions.Contains(precon))
+                        {
+                            preconditions.Add(precon);
                         }
                     }
                     /* Effects
@@ -374,15 +381,22 @@ namespace PlanningNamespace
                             }
                         }
                         // cast predicate as term?
-                        var obsTerm = new Predicate("obs", new List<ITerm>() { observedEffect as ITerm}, true);
-                        effects.Add(obsTerm);
+                      //  var obsTerm = new Predicate("obs", new List<ITerm>() { observedEffect as ITerm}, true);
+                        //effects.Add(obsTerm);
                         effects.Add(observedEffect);
 
                         goalStep.Preconditions.Add(observedEffect);
                         newLinksWithGoal.Add(new CausalLink<IPlanStep>(observedEffect, actingStep, goalStep));
                         goalStep.OpenConditions.Remove(observedEffect);
                     }
-                        
+                    foreach (var eff in gdecomp.Effects)
+                    {
+                        if (!effects.Contains(eff))
+                        {
+                            effects.Add(eff);
+                        }
+                    }
+
                     // Create a composite step
                     var compOp = new Operator(decompschema.name, preconditions, effects);
                     compOp.Height = 1;
@@ -422,7 +436,7 @@ namespace PlanningNamespace
             var preds = new List<IPredicate>();
             foreach (var step in stepsToCreatePredicatesWith)
             {
-                var stepTerm = new Term(step.ID.ToString(), true)
+                var stepTerm = new Term(step.Action.ID.ToString(), true)
                 {
                     Variable = step.ToString()
                 };
@@ -518,14 +532,14 @@ namespace PlanningNamespace
             GroundActionFactory.GroundActions = replacedActions;
             GroundActionFactory.GroundLibrary = replacedActions.ToDictionary(item => item.ID, item => item);
 
-
-            CacheMaps.CacheLinks(GroundActionFactory.GroundActions);
-            CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, problem.Goal);
-
-
             // Detect Statics
             Debug.Log("Detecting Statics");
-            GroundActionFactory.DetectStatics(CacheMaps.CausalTupleMap, CacheMaps.ThreatTupleMap);
+            GroundActionFactory.DetectStatics();
+            RemoveStaticPreconditions(GroundActionFactory.GroundActions);
+
+            // Cache links, now not bothering with statics
+            CacheMaps.CacheLinks(GroundActionFactory.GroundActions);
+            CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, problem.Goal);
 
 
             Debug.Log("Caching Heuristic costs");
@@ -540,7 +554,7 @@ namespace PlanningNamespace
         public List<IObject> GetObjects()
         {
             var locationHost = GameObject.FindGameObjectWithTag("Locations");
-            var locations = Enumerable.Range(0, locationHost.transform.childCount).Select(i => locationHost.transform.GetChild(i));
+            var locations = Enumerable.Range(0, locationHost.transform.childCount).Select(i => locationHost.transform.GetChild(i)).Where(item => item.gameObject.activeSelf);
             var actorHost = GameObject.FindGameObjectWithTag("ActorHost");
             var actors = Enumerable.Range(0, actorHost.transform.childCount).Select(i => actorHost.transform.GetChild(i));
 
@@ -644,17 +658,26 @@ namespace PlanningNamespace
             {
                 // sum_{pre in newstep.preconditions} currentMap[pre]
                 int thisStepsValue = 0;
-                foreach (var precon in newStep.Preconditions)
+                try
                 {
-                    if (IsPrimaryEffect(precon))
+
+                    foreach (var precon in newStep.Preconditions)
                     {
-                        thisStepsValue += currentMap.Get(precon.Sign)[precon];
-                    }
-                    else
-                    {
-                        thisStepsValue += HeuristicMethods.visitedPreds.Get(precon.Sign)[precon];
+                        if (IsPrimaryEffect(precon))
+                        {
+                            thisStepsValue += currentMap.Get(precon.Sign)[precon];
+                        }
+                        else
+                        {
+                            thisStepsValue += HeuristicMethods.visitedPreds.Get(precon.Sign)[precon];
+                        }
                     }
                 }
+                catch
+                {
+                    Debug.Log("here");
+                }
+
 
                 foreach (var eff in newStep.Effects)
                 {
@@ -690,6 +713,35 @@ namespace PlanningNamespace
         public static bool IsPrimaryEffect(IPredicate pred)
         {
             return (pred.Name.Equals("obs") || pred.Name.Equals("obs-starts"));
+        }
+
+        public static void RemoveStaticPreconditions(List<IOperator> groundActions)
+        {
+            foreach (var ga in groundActions)
+            {
+                List<IPredicate> newPreconds = new List<IPredicate>();
+                foreach (var precon in ga.Preconditions)
+                {
+                    if (GroundActionFactory.Statics.Contains(precon))
+                    {
+                        continue;
+                    }
+                    if (IsPrimaryEffect(precon))
+                    {
+                        var termAsPred = precon.Terms[0] as IPredicate;
+                        if (termAsPred != null)
+                        {
+                            if (GroundActionFactory.Statics.Contains(termAsPred))
+                            {
+                                continue;
+                            }
+                        }
+                    }
+                    newPreconds.Add(precon);
+                }
+
+                ga.Preconditions = newPreconds;
+            }
         }
 
     }

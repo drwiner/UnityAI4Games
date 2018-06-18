@@ -32,9 +32,13 @@ namespace TimelineClipsNamespace
             //Debug.Log("Playable duration: " + playable.GetDuration());
             //Debug.Log("\n");
 
+            
+
             _gameObject.transform.position = Vector3.Lerp(_lerpMoveFrom.position, _lerpMoveTo.position, (float)(playable.GetTime() / playable.GetDuration()));
             _gameObject.transform.rotation = Quaternion.Lerp(_lerpMoveFrom.rotation, _lerpMoveTo.rotation, (float)(playable.GetTime() / playable.GetDuration()));
             _gameObject.transform.localScale = Vector3.Lerp(_lerpMoveFrom.localScale, _lerpMoveTo.localScale, (float)(playable.GetTime() / playable.GetDuration()));
+
+
         }
 
         public override void OnBehaviourPlay(Playable playable, FrameData info)

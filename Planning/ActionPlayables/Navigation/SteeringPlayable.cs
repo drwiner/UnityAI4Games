@@ -18,6 +18,8 @@ public class SteeringPlayable : PlayableBehaviour
     private ulong initialFrameId;
     private int accumulated;
 
+    bool m_FirstFrameHappened;
+
     public void Initialize(GameObject gameObject, Vector3 lerpMoveFrom, Vector3 lerpMoveTo, bool departing, bool arriving, bool isMaster)
     {
         //Debug.Log("INIT");
@@ -34,6 +36,14 @@ public class SteeringPlayable : PlayableBehaviour
 
     public override void ProcessFrame(Playable playable, FrameData info, object playerData)
     {
+        //Transform trackBinding = playerData as Transform;
+
+        //if (trackBinding == null)
+        //    return;
+
+        //int inputCount = playable.GetInputCount();
+
+
 
         if (!_Controller.IsDone())
         {
@@ -57,10 +67,16 @@ public class SteeringPlayable : PlayableBehaviour
             }
             
         }
-        
+
         //Debug.Log(_gameObject.transform.position);
     }
 
+    //public override void OnGraphStart(Playable playable)
+    //{
+    //    var duration = playable.GetDuration();
+    //    _gameObject.transform.position = _steerFrom;
+    //    _gameObject.transform.rotation = _originalRotation;
+    //}
 
     public override void OnBehaviourPlay(Playable playable, FrameData info)
     {

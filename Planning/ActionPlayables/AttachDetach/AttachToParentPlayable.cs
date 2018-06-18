@@ -15,6 +15,13 @@ namespace TimelineClipsNamespace
             _child = child;
         }
 
+        public override void PrepareFrame(Playable playable, FrameData info)
+        {
+            
+
+            base.PrepareFrame(playable, info);
+        }
+
         public override void ProcessFrame(Playable playable, FrameData info, object playerData)
         {
             if (playable.GetTime() <= 0 || _parent == null || _child == null)

@@ -1,6 +1,7 @@
 ﻿using BoltFreezer.FileIO;
 using BoltFreezer.Interfaces;
 using BoltFreezer.PlanTools;
+using BoltFreezer.Scheduling;
 using BoltFreezer.Utilities;
 using System.Collections;
 using System.Collections.Generic;
@@ -45,16 +46,22 @@ namespace PlanningNamespace
                 }
             }
 
-            BinarySerializer.SerializeObject(CausalMapFileName + ".CachedCausalMap", CacheMaps.CausalTupleMap);
-            BinarySerializer.SerializeObject(ThreatMapFileName + ".CachedThreatMap", CacheMaps.ThreatTupleMap);
-            try
-            {
-                BinarySerializer.SerializeObject(EffortMapFileName + ".CachedEffortMap", HeuristicMethods.visitedPreds);
-            }
-            catch
-            {
+//            CacheMaps.CacheLinks(GroundActionFactory.GroundActions);
+ //           CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, UPC.goalPredicateList);
+ //           CacheMaps.CacheAddReuseHeuristic(new State(UPC.initialPredicateList) as IState);
+   //         UnityGroundActionFactory.PrimaryEffectHack(new State(UPC.initialPredicateList) as IState);
 
-            }
+            //BinarySerializer.SerializeObject(CausalMapFileName + ".CachedCausalMap", CacheMaps.CausalTupleMap);
+            //BinarySerializer.SerializeObject(ThreatMapFileName + ".CachedThreatMap", CacheMaps.ThreatTupleMap);
+            //try
+            //{
+            //    BinarySerializer.SerializeObject(EffortMapFileName + ".CachedEffortMap", HeuristicMethods.visitedPreds);
+            //}
+            //catch
+            //{
+
+            //}
+
             //var seeable = HeuristicMethods.visitedPreds;
             //var alreadyVisited = new Dictionary<int, IPredicate>();
             //foreach (var keyvalue in HeuristicMethods.visitedPreds)
@@ -70,20 +77,56 @@ namespace PlanningNamespace
             //BinarySerializer.SerializeObject(EffortMapFileName + ".CachedEffortMap", HeuristicMethods.visitedPreds);
         }
 
+        public List<IPlanStep> DecachePlan()
+        {
+            Parser.path = @"D:\documents\frostbow\";
+            var savePath = Parser.GetTopDirectory() + @"Results\" + problemname + @"\Solutions\";
+            var plan = BinarySerializer.DeSerializeObject<List<IPlanStep>>(savePath + "PlanSteps");
+            return plan;
+        }
+
         public void DecacheSteps()
         {
             Parser.path = @"D:\documents\frostbow\";
             var FileName = GetFileName();
             GroundActionFactory.GroundActions = new List<IOperator>();
             GroundActionFactory.GroundLibrary = new Dictionary<int, IOperator>();
+
+            int maxSeen = 0;
+            int maxStepSeen = 0;
+
             foreach (var file in Directory.GetFiles(Parser.GetTopDirectory() + @"Cached\CachedOperators\UnityBlocksWorld\", problemname + "*.CachedOperator"))
             {
                 var op = BinarySerializer.DeSerializeObject<IOperator>(file);
                 GroundActionFactory.GroundActions.Add(op);
                 GroundActionFactory.GroundLibrary[op.ID] = op;
+                if (op.ID > maxSeen)
+                {
+                    maxSeen = op.ID;
+                }
+                var comp = op as IComposite;
+                if (comp == null)
+                {
+                    continue;
+                }
+                else
+                {
+                    foreach (var sub in comp.SubSteps)
+                    {
+                        if (sub.ID > maxStepSeen)
+                        {
+                            maxStepSeen = sub.ID;
+                        }
+                    }
+                    if (comp.GoalStep.ID > maxStepSeen)
+                    {
+                        maxStepSeen = comp.GoalStep.ID;
+                    }
+                }
             }
             // THIS is so that initial and goal steps created don't get matched with these
-            Operator.SetCounterExternally(GroundActionFactory.GroundActions.Count + 1);
+            Operator.SetCounterExternally(maxSeen + 1);
+            PlanStep.SetCounterExternally(maxStepSeen + 1);
         }
 
         public void DeCacheIt()
@@ -94,38 +137,43 @@ namespace PlanningNamespace
             BoltFreezer.Utilities.Logger.SetDirectory(@"D:\documents\frostbow\Results\UnityBlocksWorld\");
             DecacheSteps();
 
-            UnityPlanningInterface.AddObservedNegativeConditions(UPC);
+          //  UnityPlanningInterface.AddObservedNegativeConditions(UPC);
 
             var CausalMapFileName = GetCausalMapFileName();
             var ThreatMapFileName = GetThreatMapFileName();
             var EffortMapFileName = GetEffortDictFileName();
 
-            try
-            {
-                var cmap = BinarySerializer.DeSerializeObject<TupleMap<IPredicate, List<int>>>(CausalMapFileName + ".CachedCausalMap");
-                CacheMaps.CausalTupleMap = cmap;
+            CacheMaps.CacheLinks(GroundActionFactory.GroundActions);
+            CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, UPC.goalPredicateList);
+            CacheMaps.CacheAddReuseHeuristic(new State(UPC.initialPredicateList) as IState);
+            UnityGroundActionFactory.PrimaryEffectHack(new State(UPC.initialPredicateList) as IState);
 
-                var tcmap = BinarySerializer.DeSerializeObject<TupleMap<IPredicate, List<int>>>(ThreatMapFileName + ".CachedThreatMap");
-                CacheMaps.ThreatTupleMap = tcmap;
+            //try
+            //{
+            //    var cmap = BinarySerializer.DeSerializeObject<TupleMap<IPredicate, List<int>>>(CausalMapFileName + ".CachedCausalMap");
+            //    CacheMaps.CausalTupleMap = cmap;
 
-                try
-                {
-                    var emap = BinarySerializer.DeSerializeObject<TupleMap<IPredicate, int>>(EffortMapFileName + ".CachedEffortMap");
-                    HeuristicMethods.visitedPreds = emap;
-                }
-                catch
-                {
-                    CacheMaps.CacheAddReuseHeuristic(new State(UPC.initialPredicateList) as IState);
-                    UnityGroundActionFactory.PrimaryEffectHack(new State(UPC.initialPredicateList) as IState);
-                }
-            }
-            catch
-            {
-                CacheMaps.CacheLinks(GroundActionFactory.GroundActions);
-                CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, UPC.goalPredicateList);
-                CacheMaps.CacheAddReuseHeuristic(new State(UPC.initialPredicateList) as IState);
-                UnityGroundActionFactory.PrimaryEffectHack(new State(UPC.initialPredicateList) as IState);
-            }
+            //    var tcmap = BinarySerializer.DeSerializeObject<TupleMap<IPredicate, List<int>>>(ThreatMapFileName + ".CachedThreatMap");
+            //    CacheMaps.ThreatTupleMap = tcmap;
+
+            //    try
+            //    {
+            //        var emap = BinarySerializer.DeSerializeObject<TupleMap<IPredicate, int>>(EffortMapFileName + ".CachedEffortMap");
+            //        HeuristicMethods.visitedPreds = emap;
+            //    }
+            //    catch
+            //    {
+            //        CacheMaps.CacheAddReuseHeuristic(new State(UPC.initialPredicateList) as IState);
+            //        UnityGroundActionFactory.PrimaryEffectHack(new State(UPC.initialPredicateList) as IState);
+            //    }
+            //}
+            //catch
+            //{
+            //    CacheMaps.CacheLinks(GroundActionFactory.GroundActions);
+            //    CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, UPC.goalPredicateList);
+            //    CacheMaps.CacheAddReuseHeuristic(new State(UPC.initialPredicateList) as IState);
+            //    UnityGroundActionFactory.PrimaryEffectHack(new State(UPC.initialPredicateList) as IState);
+            //}
 
         }
 

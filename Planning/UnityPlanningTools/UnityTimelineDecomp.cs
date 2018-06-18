@@ -14,6 +14,7 @@ using TimelineClipsNamespace;
 using BoltFreezer.DecompTools;
 using BoltFreezer.Utilities;
 using BoltFreezer.Camera;
+using GraphNamespace;
 
 namespace PlanningNamespace {
 
@@ -25,6 +26,9 @@ namespace PlanningNamespace {
         public List<string> FabulaStepNames;
         public List<string> DiscourseStepNames;
         public List<NonEqualTuple> NonEqualities;
+
+        public List<IPredicate> Preconditions;
+        public List<IPredicate> Effects;
 
         // used to assemble clips from timeline
         private PlayableDirector playableDirector;
@@ -149,6 +153,9 @@ namespace PlanningNamespace {
 
         public void Assemble()
         {
+            Preconditions = new List<IPredicate>();
+            Effects = new List<IPredicate>();
+
             SubSteps = new List<IPlanStep>();
             DSubSteps = new List<CamPlanStep>();
 
@@ -190,15 +197,18 @@ namespace PlanningNamespace {
                 // read the step variable from the asset
                 var planStep = ReadStepVariable(fabClip);
 
-                // Add terms to decomp terms
-                foreach(var term in planStep.Terms)
+                // Add terms to decomp terms, only if terms are 0
+                if (Terms.Count == 0)
                 {
-                    if (visitedVariables.Contains(term.Variable))
+                    foreach (var term in planStep.Terms)
                     {
-                        term.Variable = term.Variable + planStep.GetHashCode().ToString();
+                        if (visitedVariables.Contains(term.Variable))
+                        {
+                            term.Variable = term.Variable + planStep.GetHashCode().ToString();
+                        }
+                        visitedVariables.Add(term.Variable);
+                        Terms.Add(term);
                     }
-                    visitedVariables.Add(term.Variable);
-                    Terms.Add(term);
                 }
 
                 SubSteps.Add(planStep);
@@ -311,7 +321,9 @@ namespace PlanningNamespace {
                     {
                         // literal literalAsVariableName predicatename, term_0, term_1...., term_k
                         // indicates declaration of literal
+                        var literalAsVariableName = constraintParts[1];
                         var predicate = ProcessPredicateString(constraintParts.Skip(1).ToArray());
+                        literalMap[literalAsVariableName] = predicate;
                     }
 
                     // if constraints[0] is some kind of ordering constraint that's different from those 
@@ -333,38 +345,47 @@ namespace PlanningNamespace {
                         var cl = new CausalLink<IPlanStep>(dependency, source, sink);
                         links.Add(cl);
                     }
+
+                    if (constraintParts[0].Equals("precondition") || constraintParts[0].Equals("precond"))
+                    {
+                        // indicates a precondition
+                        var predicate = ProcessPredicateString(constraintParts);
+                        //preconditions
+                        Preconditions.Add(predicate);
+
+                    }
+
+                    if (constraintParts[0].Equals("effect") || constraintParts[0].Equals("eff"))
+                    {
+                        // indicates an effect
+                        var predicate = ProcessPredicateString(constraintParts);
+                        //preconditions
+                        Effects.Add(predicate);
+
+                    }
                 }
             }
             /// next we have to filter the schemas based on actual candidates. for steps that's groundActions, and for cams that's gameObjects with the camAttributeStruct
             /// then, we filter based on global constraints
         }
 
+
         public void Filter()
         {
-            var root = new Operator(new Predicate(gameObject.name, Terms, true)) as IOperator;
+            var root = new Operator(new Predicate(gameObject.name, Terms, true), Preconditions, Effects) as IOperator;
             
             PartialDecomp = new TimelineDecomposition(root, new List<IPredicate>(), cntgs, dcntgs, stepConstraints, dstepConstraints, SubSteps, DSubSteps, orderings, dorderings, links, dlinks, fabVarStepMap);
-            var camOptions = new List<CamSchema>();
-            if (CameraHost == null)
+
+            // Instantiate Nonequality constraints
+            PartialDecomp.NonEqualities = new List<List<ITerm>>();
+            foreach (var nonequality in NonEqualities)
             {
-                CameraHost = GameObject.FindGameObjectWithTag("Cameras");
+                PartialDecomp.NonEqualities.Add(new List<ITerm>() { Terms[nonequality.first], Terms[nonequality.second] });
             }
-            for(int i = 0; i < CameraHost.transform.childCount; i++)
-            {
-                var cameraSchema = CameraHost.transform.GetChild(i).GetComponent<CamAttributesStruct>().AsSchema();
-                camOptions.Add(cameraSchema);
-            }
-            if (LocationHost == null)
-            {
-                LocationHost = GameObject.FindGameObjectWithTag("LocationHost");
-            }
-            var locationMap = new Dictionary<string, Vector3>();
-            for(int i= 0; i < LocationHost.transform.childCount; i++)
-            {
-                var locationObj = LocationHost.transform.GetChild(i);
-                locationMap[locationObj.name] = locationObj.transform.position;
-            }
-            GroundDecomps = TimelineDecompositionHelper.Compose(0, PartialDecomp, camOptions, locationMap);
+
+            TimelineDecompositionHelper.SetCamsAndLocations(CameraHost, LocationHost);
+
+            GroundDecomps = TimelineDecompositionHelper.Compose(0, PartialDecomp);
             NumGroundDecomps = GroundDecomps.Count();
             // foreach cndt, create a child gameobject and create a playable director and a control track. for each action in 
         }
@@ -396,7 +417,16 @@ namespace PlanningNamespace {
             // get params by perceiving playable director.
             for (int i = 0; i < objectParameterTypes.Count; i++)
             {
-                var newTerm = new Term(i.ToString() + "_unboundTerm");
+                var newTerm = new Term(i.ToString());
+                if (TermNames.Count == 0)
+                {
+                    newTerm = new Term(i.ToString() + "_unboundTerm");
+
+                }
+                else if (TermNames.Count == objectParameterTypes.Count)
+                {
+                    newTerm = new Term(TermNames[i]);
+                }
                 newTerm.Type = objectParameterTypes[i].name;
                 Terms.Add(newTerm as ITerm);
             }
@@ -472,6 +502,7 @@ namespace PlanningNamespace {
                     terms.Add(newTerm as ITerm);
                 }
             }
+
            
 
             foreach(var constraint in fabAsset.Constraints)
@@ -483,19 +514,28 @@ namespace PlanningNamespace {
                     for (int j = 1; j < constraintParts.Count(); j++)
                     {
                         var instructArg = constraintParts[j];
-                        var newTerm = new Term(instructArg, true) as ITerm;
+                        var newTerm = new Term(instructArg) as ITerm;
+                        if (terms.Count >= j)
+                        {
+                            terms[j - 1].Variable = instructArg;
+                        }
+                        //else if (terms.Count > j-1)
+                        //{
+                        //    // and not bound
+                        //    terms.Add(newTerm);
+                        //}
                         // if there already is a term at this index, need to reference with variable
-                        if (terms.Count > j - 1)
-                        {
-                            var existingTerm = terms[j - 1];
-                            newTerm.Variable = existingTerm.Variable;
-                            newTerm.Type = existingTerm.Type;
-                            terms[j - 1] = newTerm;
-                        }
-                        else
-                        {
-                            terms.Add(newTerm);
-                        }
+                        //if (terms.Count > j - 1)
+                        //{
+                        //    var existingTerm = terms[j - 1];
+                        //    newTerm.Variable = existingTerm.Variable;
+                        //    newTerm.Type = existingTerm.Type;
+                        //    terms[j - 1] = newTerm;
+                        //}
+                        //else
+                        //{
+                        //    terms.Add(newTerm);
+                        //}
 
                     }
                     //foreach(var instructArg in constraintParts.Skip(1))
@@ -617,6 +657,8 @@ namespace PlanningNamespace {
             // Assign CamSchema, will be used to filter valid camera objects (CamAttributesStruct)
             ps.CamDetails = discClip.asset.camSchema;
 
+            ps.directive = discClip.asset.camDirective;
+
             return ps;
             
         }
@@ -698,7 +740,7 @@ namespace PlanningNamespace {
             {
                 
                 // The percentage of fa.Second into fa.duration
-                percentEnd = (fa.start + fa.duration - intervalX.Second) / fa.duration;
+                percentEnd = (1 - (fa.start + fa.duration - intervalX.Second) / fa.duration);
             }
 
             return new Tuple<double, double>(Math.Round(percentStart, 2), Math.Round(percentEnd, 2));
@@ -744,7 +786,7 @@ namespace PlanningNamespace {
             }
             foreach (var instructArg in predString.Skip(skippable))
             {
-                predTerms.Add(new Term(instructArg, true) as ITerm);
+                predTerms.Add(new Term(instructArg) as ITerm);
                 // either this references a term or is a constant name. 
             }
             var pred = new Predicate(predicateName, predTerms, signage) as IPredicate;

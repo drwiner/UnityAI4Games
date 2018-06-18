@@ -25,12 +25,14 @@ namespace PlanningNamespace
         public bool savePlan;
         public int retrievePlan;
         public bool getPlan;
+        public bool decachePlan = false;
         public bool justCacheMapsAndEffort = false;
 
         public float cutoffTime = 10000;
 
         public List<string> PlanSteps;
         public List<IPlanStep> Plan;
+        public Dictionary<int, int> MergeManager;
 
        // private List<string> GroundSteps;
         private SavedPlans SavedPlansComponent;
@@ -75,6 +77,20 @@ namespace PlanningNamespace
                 }
             }
 
+            if (decachePlan)
+            {
+                decachePlan = false;
+                Plan = cacheManager.DecachePlan();
+                PlanSteps = new List<string>();
+                //Plan = plan.Orderings.TopoSort(plan.InitialStep).ToList();
+                //MergeManager = plan.MM.ToRootMap();
+                foreach (var step in Plan)
+                {
+
+                    PlanSteps.Add(step.ToString());
+                }
+            }
+
             
         }
 
@@ -115,13 +131,13 @@ namespace PlanningNamespace
 
             if (DeCacheIt)
             {
-                //DeCacheIt = false;
+               // DeCacheIt = false;
                 cacheManager.DeCacheIt();
             }
             else if (justCacheMapsAndEffort)
             {
                 cacheManager.DecacheSteps();
-                AddObservedNegativeConditions(UPC);
+                //AddObservedNegativeConditions(UPC);
 
                 CacheMaps.CacheLinks(GroundActionFactory.GroundActions);
                 CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, UPC.goalPredicateList);
@@ -137,7 +153,7 @@ namespace PlanningNamespace
             {
                 UGAF.PreparePlanner(true);
                 GroundActionFactory.GroundActions = new HashSet<IOperator>(GroundActionFactory.GroundActions).ToList();
-                AddObservedNegativeConditions(UPC);
+               // AddObservedNegativeConditions(UPC);
                 UnityGroundActionFactory.CreateSteps(UPC, UGAF.DecompositionSchemata);
 
                 cacheManager.CacheIt();
@@ -149,8 +165,8 @@ namespace PlanningNamespace
             Debug.Log("Planner and initial plan Prepared");
 
             // MW-Loc-Conf
-            var solution = Run(initialPlan, new ADstar(false), new E0(new NumOpenConditionsHeuristic(), true), cutoffTime);
-            //var solution = Run(initialPlan, new ADstar(false), new E0(new AddReuseHeuristic(), true), cutoffTime);
+           // var solution = Run(initialPlan, new ADstar(false), new E0(new NumOpenConditionsHeuristic(), true), cutoffTime);
+            var solution = Run(initialPlan, new ADstar(false), new E0(new AddReuseHeuristic(), true), cutoffTime);
             //var solution = Run(initialPlan, new ADstar(false), new E3(new AddReuseHeuristic()), cutoffTime);
             //var solution = Run(initPlan, new BFS(), new Nada(new ZeroHeuristic()), 20000);
             if (solution != null)
@@ -158,6 +174,8 @@ namespace PlanningNamespace
                 //Debug.Log(solution.ToStringOrdered());
                 PlanSteps = new List<string>();
                 Plan = new List<IPlanStep>();
+                var planSchedule = solution as PlanSchedule;
+                MergeManager = planSchedule.MM.ToRootMap();
                 foreach (var step in solution.Orderings.TopoSort(solution.InitialStep))
                 {
                     Debug.Log(step);

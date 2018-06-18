@@ -8,26 +8,35 @@ using PlanningNamespace;
 using GraphNamespace;
 using System;
 using BoltFreezer.Camera.CameraEnums;
+using BoltFreezer.Utilities;
+using BoltFreezer.Camera;
+using BoltFreezer.PlanTools;
+using BoltFreezer.Interfaces;
 
 namespace CameraNamespace {
 
     [ExecuteInEditMode]
-    public class CamGen : MonoBehaviour {
+    public class CamGen : MonoBehaviour
+    {
 
         // Needs access to problem and actions
+        public Dictionary<string, List<Tuple<Trans, CamSchema>>> locationCamDictionary;
+        public Dictionary<Edge, Dictionary<double, List<CamSchema>>> navCamDictionary;
         private UnityProblemCompiler problemStates;
         public List<UnityActionOperator> actions;
         private List<GameObject> actors;
         private TileGraph tileMap;
-        private List<FramingType> FrameTypeList;
 
         public bool initiated = false;
         public bool assembleCameras = false;
-        public bool filterExisting = false;
+        public bool recheckCamerasForVisibility = false;
         public int numCams;
         public bool refresh;
         public bool deleteChildren = false;
         public bool activateAllCams = false;
+        public string cacheFileName = "raceTest(1)";
+        public bool cacheCams = false;
+        public bool decacheCams = false;
 
         private List<GameObject> cameraList;
 
@@ -39,7 +48,7 @@ namespace CameraNamespace {
         // Use this for initialization
         void Start()
         {
-            Initiate();
+            //Initiate();
         }
 
         public void Initiate()
@@ -74,11 +83,12 @@ namespace CameraNamespace {
         }
 
         // Update is called once per frame
-        void Update() {
+        void Update()
+        {
             if (numCams == 0 && refresh)
             {
                 // get all inactive cameras
-                for(int i =0; i < transform.childCount; i++)
+                for (int i = 0; i < transform.childCount; i++)
                 {
                     var item = transform.GetChild(i).gameObject;
                     cameraList.Add(item);
@@ -101,10 +111,10 @@ namespace CameraNamespace {
             if (cameraList != null)
                 numCams = cameraList.Count;
 
-            if (filterExisting)
+            if (recheckCamerasForVisibility)
             {
-                filterExisting = false;
-                FilterUnclearShots();
+                recheckCamerasForVisibility = false;
+                cameraList = FilterUnclearShots(cameraList);
             }
 
             if (deleteChildren)
@@ -121,74 +131,118 @@ namespace CameraNamespace {
             if (activateAllCams)
             {
                 activateAllCams = false;
-                foreach( var item in cameraList)
+                foreach (var item in cameraList)
                 {
                     item.SetActive(true);
                 }
             }
+
+            if (cacheCams)
+            {
+                cacheCams = false;
+                var result = CameraCacheManager.CacheCams(cameraList, cacheFileName);
+                if (result)
+                {
+                    Debug.Log("Cam Cache success");
+                }
+                else
+                {
+                    Debug.Log("Cam Cache Failure");
+                }
+            }
+
+            if (decacheCams)
+            {
+                decacheCams = false;
+                var result = CameraCacheManager.DecacheCams(cacheFileName);
+                if (result)
+                {
+                    Debug.Log("Cam Cache success");
+                }
+                else
+                {
+                    Debug.Log("Cam Cache Failure");
+                }
+                numCams = CameraCacheManager.CachedCams.Count;
+            }
+
+
         }
 
         public void Assemble()
         {
             // in preparation, de-enable all actors
-            ToggleActorsVisible(false);
+            //ToggleActorsVisible(false);
 
             cameraList = new List<GameObject>();
-            // Gist: for each location, (and each segment duration for each navigation action),
 
             /// FramingParameters framing_data = FramingParameters.FramingTable[FramingType.ExtremeCloseUp];
             /// cva.m_LookAt = target_go.transform;
 
             foreach (var loc in tileMap.Nodes)
             {
-                foreach (FramingType frame in Enum.GetValues(typeof(FramingType)))
+                var newList = GenerateCamsPerLocation(loc.gameObject);
+                foreach (var item in newList)
                 {
-                    if (frame.Equals(FramingType.None))
+
+                    cameraList.Add(item);
+                }
+            }
+            Debug.Log("Generated Location-based Cams");
+
+            GenerateLocationDictionary();
+            Debug.Log("Generated Location-based Dictionary of Cams");
+
+            GenerateNavDictionary();
+            Debug.Log("Generated Navigation-based Dictionary of Cams");
+
+            //cameraList = FilterUnclearShots(cameraList);
+
+            //ToggleActorsVisible(true);
+            Debug.Log("Assembled Cameras");
+        }
+
+        public List<GameObject> GenerateCamsPerLocation(GameObject location)
+        {
+            List<GameObject> camsPerLocation = new List<GameObject>();
+            foreach (FramingType frame in Enum.GetValues(typeof(FramingType)))
+            {
+                if (frame.Equals(FramingType.None))
+                {
+                    continue;
+                }
+                foreach (Orient orient in Enum.GetValues(typeof(Orient)))
+                {
+                    if (orient.Equals(Orient.None))
                     {
                         continue;
                     }
-                    foreach (Orient orient in Enum.GetValues(typeof(Orient)))
+                    foreach (Vangle vangle in Enum.GetValues(typeof(Vangle)))
                     {
-                        if (orient.Equals(Orient.None))
+                        if (vangle.Equals(Vangle.None))
                         {
                             continue;
                         }
-                        foreach (Vangle vangle in Enum.GetValues(typeof(Vangle)))
+                        foreach (Hangle hangle in Enum.GetValues(typeof(Hangle)))
                         {
-                            if (vangle.Equals(Vangle.None))
+                            if (hangle.Equals(Hangle.None))
                             {
                                 continue;
                             }
-                            foreach (Hangle hangle in Enum.GetValues(typeof(Hangle)))
+                            // Create Camera
+                            var Cam = CreateCamera(location, frame, orient, hangle, vangle);
+                            if (Cam == null)
                             {
-                                if (hangle.Equals(Hangle.None))
-                                {
-                                    continue;
-                                }
-                                // Create Camera
-                                var Cam = CreateCamera(loc, frame, orient, hangle, vangle);
-                                cameraList.Add(Cam);
-                                Cam.transform.parent = this.transform;
-                                Cam.SetActive(false);
-                                // Query whether there exists a clear shot
-                                //if (IsValidShot(Cam.transform.position, actors[0].gameObject))
-                                //{
-                                //    CameraList.Add(Cam);
-                                //    Cam.transform.parent = this.transform;
-                                //}
-                                //else
-                                //{
-                                //    GameObject.DestroyImmediate(Cam);
-                                //}
-
+                                continue;
                             }
+                            camsPerLocation.Add(Cam);
+                            Cam.transform.parent = this.transform;
+                            Cam.SetActive(false);
                         }
                     }
                 }
             }
-
-            ToggleActorsVisible(true);
-            Debug.Log("Assembled Cameras");
+            return camsPerLocation;
         }
 
         public void ToggleActorsVisible(bool whichWay)
@@ -199,7 +253,7 @@ namespace CameraNamespace {
             }
         }
 
-        public GameObject CreateCamera(TileNode loc, FramingType scale, Orient orient, Hangle hangle, Vangle vangle)
+        public GameObject CreateCamera(GameObject loc, FramingType scale, Orient orient, Hangle hangle, Vangle vangle)
         {
             //Debug.Log(scale);
             GameObject camHost = new GameObject();
@@ -209,14 +263,16 @@ namespace CameraNamespace {
             var cc = cva.AddCinemachineComponent<CinemachineComposer>();
             var cbmcp = cva.AddCinemachineComponent<CinemachineBasicMultiChannelPerlin>();
             var camattributes = camHost.AddComponent<CamAttributesStruct>();
-            camattributes.Set(scale, loc.transform.gameObject.name, orient, hangle, vangle);
+            camattributes.Set(scale, loc.name, orient, hangle, vangle);
 
             // composer parameters TODO: tweak via separate gameobject component structure
             cc.m_HorizontalDamping = 10;
             cc.m_VerticalDamping = 10;
             cc.m_LookaheadTime = 0.2f;
             cc.m_DeadZoneWidth = 0.25f;
+            cc.m_DeadZoneHeight = 0.25f;
             cc.m_SoftZoneWidth = 0.5f;
+            cc.m_SoftZoneHeight = 0.5f;
 
             FramingParameters framing_data;
             try
@@ -233,6 +289,7 @@ namespace CameraNamespace {
             // Lens
             cbod.IndexOfLens = CinematographyAttributes.lenses[framing_data.DefaultFocalLength];
 
+
             // set at planning time.
             //cbod.FocusTransform = target_go.transform;
 
@@ -248,16 +305,25 @@ namespace CameraNamespace {
             // calculate where to put camera
             var fakeTarget = CreateFakeTarget(actors[0].gameObject, loc.transform);
             var camDist = CinematographyAttributes.CalcCameraDistance(fakeTarget, scale);
-            GameObject.DestroyImmediate(fakeTarget);
+
             cbod.FocusDistance = camDist;
 
             // Calculate Camera Position
             camHost.transform.position = loc.transform.position + camTransformDirection * camDist;
+            camHost.transform.position = new Vector3(camHost.transform.position.x, 0.5f, camHost.transform.position.z);
             var height = CinematographyAttributes.SolveForY(loc.transform.position, camHost.transform.position, 0.5f, camattributes.VangleInt);
             camHost.transform.position = new Vector3(camHost.transform.position.x, height, camHost.transform.position.z);
 
             // Gives starting orientation of camera. At planning time, a "lookAt" parameter is set to specific target.
             camHost.transform.rotation.SetLookRotation(loc.transform.position);
+
+            if (!IsValidShot(camHost.transform.position, fakeTarget))
+            {
+                GameObject.DestroyImmediate(camHost);
+                GameObject.DestroyImmediate(fakeTarget);
+                return null;
+            }
+            GameObject.DestroyImmediate(fakeTarget);
 
             // Set Name of camera object
             camHost.name = string.Format("{0}.{1}.{2}.{3}.{4}", loc.name, scale, camattributes.targetOrientation, camattributes.hangle, camattributes.vangle);
@@ -265,10 +331,11 @@ namespace CameraNamespace {
 
         }
 
-        public void FilterUnclearShots()
+        public List<GameObject> FilterUnclearShots(List<GameObject> cams)
         {
+            ToggleActorsVisible(false);
             List<GameObject> _cameraList = new List<GameObject>();
-            foreach(var cam in cameraList)
+            foreach (var cam in cams)
             {
                 var camAttributes = cam.GetComponent<CamAttributesStruct>();
                 var fakeTarget = CreateFakeTarget(actors[0].gameObject, GameObject.Find(camAttributes.targetLocation).transform);
@@ -278,10 +345,13 @@ namespace CameraNamespace {
                 }
                 GameObject.DestroyImmediate(fakeTarget);
                 // For debugging:
-                    //fakeTarget.name = string.Format("TargetFor {0}", cam.name);
+                //fakeTarget.name = string.Format("TargetFor {0}", cam.name);
             }
-            cameraList = _cameraList;
+            //cameraList = _cameraList;
+            ToggleActorsVisible(true);
             Debug.Log(string.Format("Filtered Cameras: {0}", cameraList.Count));
+
+            return _cameraList;
         }
 
         public GameObject CreateFakeTarget(GameObject cndtTarget, Transform loc)
@@ -325,15 +395,16 @@ namespace CameraNamespace {
             }
 
             return true;
-            
+
         }
 
-        public static Vector3[] GetColliderVertexPositions(GameObject obj) {
+        public static Vector3[] GetColliderVertexPositions(GameObject obj)
+        {
             var vertices = new Vector3[8];
             var thisMatrix = obj.transform.localToWorldMatrix;
             var storedRotation = obj.transform.rotation;
             obj.transform.rotation = Quaternion.identity;
-            
+
             var extents = obj.GetComponent<BoxCollider>().bounds.extents;
             vertices[0] = thisMatrix.MultiplyPoint3x4(extents);
             vertices[1] = thisMatrix.MultiplyPoint3x4(new Vector3(-extents.x, extents.y, extents.z));
@@ -343,12 +414,12 @@ namespace CameraNamespace {
             vertices[5] = thisMatrix.MultiplyPoint3x4(new Vector3(-extents.x, -extents.y, extents.z));
             vertices[6] = thisMatrix.MultiplyPoint3x4(new Vector3(extents.x, -extents.y, -extents.z));
             vertices[7] = thisMatrix.MultiplyPoint3x4(-extents);
-   
+
             obj.transform.rotation = storedRotation;
             return vertices;
         }
 
-    public static float MapToRange(float radians)
+        public static float MapToRange(float radians)
         {
             float targetRadians = radians;
             while (targetRadians <= -Mathf.PI)
@@ -381,5 +452,89 @@ namespace CameraNamespace {
             }
             return n;
         }
+
+        public void GenerateLocationDictionary()
+        {
+            // Dictionary mapping locations to a list of cameras
+            locationCamDictionary = new Dictionary<string, List<Tuple<Trans, CamSchema>>>();
+            foreach (var node in tileMap.Nodes)
+            {
+                var loc = node.name;
+                locationCamDictionary[loc] = new List<Tuple<Trans, CamSchema>>();
+                foreach (var cam in CameraList)
+                {
+                    var camloc = cam.GetComponent<CamAttributesStruct>().targetLocation;
+                    if (camloc.Equals(loc))
+                    {
+                        var newEntry = new Tuple<Trans, CamSchema>(new Trans(cam.transform), cam.GetComponent<CamAttributesStruct>().AsSchema());
+                        locationCamDictionary[loc].Add(newEntry);
+                    }
+                }
+            }
+        }
+
+        public void GenerateNavDictionary()
+        {
+            // a dictionary mapping edges to another dictionary mapping intermediate locations to a list of cameras
+            navCamDictionary = new Dictionary<Edge, Dictionary<double, List<CamSchema>>>();
+
+            var genericActor = actors[0];
+            var generalActorLength = Math.Max(genericActor.GetComponent<BoxCollider>().size.x, genericActor.GetComponent<BoxCollider>().size.z);
+            //CreateFakeTarget(GameObject cndtTarget, Transform loc)
+            foreach (var edge in tileMap.Edges)
+            {
+                var intermediateLocationCamDictionary = new Dictionary<double, List<CamSchema>>();
+                var edgeDistance = Vector3.Distance(edge.S.transform.position, edge.T.transform.position);
+                // int numPartitions = (int)(edgeDistance / generalActorLength);
+                int numPartitions = 4;
+                var unitLength = edgeDistance / numPartitions;
+                var direction = (edge.T.transform.position - edge.S.transform.position).normalized;
+                for (int i = 1; i < numPartitions; i++)
+                {
+
+                    var newPos = edge.S.transform.position + unitLength * i * direction;
+                    newPos = new Vector3(newPos.x, edge.S.transform.position.y, newPos.z);
+                    var newIntermediateLocation = new GameObject(edge.S.name + "-" + edge.T.name + "_" + i.ToString());
+                    newIntermediateLocation.transform.position = newPos;
+
+                    var percent = (double)(i / numPartitions);
+                    intermediateLocationCamDictionary[percent] = new List<CamSchema>();
+
+                    // this will only pass if can reach target.
+                    var camList = GenerateCamsPerLocation(newIntermediateLocation);
+                    foreach (var item in camList)
+                    {
+                        cameraList.Add(item);
+                        var tupleEntry = item.GetComponent<CamAttributesStruct>().AsSchema();
+                        intermediateLocationCamDictionary[percent].Add(tupleEntry);
+                    }
+
+                }
+
+                navCamDictionary[edge] = intermediateLocationCamDictionary;
+            }
+        }
+
+        public List<CamSchema> GetCamsForEdgeAndPercent(Edge edge, double percent)
+        {
+            var intermediateLocationCamDictionary = navCamDictionary[edge];
+            double closestKey = 0;
+            double bestDistance = 1000;
+            foreach (var key in intermediateLocationCamDictionary.Keys)
+            {
+                if ((percent - key) < bestDistance)
+                {
+                    bestDistance = percent - key;
+                    closestKey = key;
+                }
+                else if (key > percent)
+                {
+                    // we've passed it already
+                    break;
+                }
+            }
+            return intermediateLocationCamDictionary[closestKey];
+        }
+
     }
 }

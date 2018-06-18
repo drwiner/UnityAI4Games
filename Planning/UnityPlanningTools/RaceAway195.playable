@@ -9,7 +9,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 337831424, guid: 6a10b2909283487f913b00d94cd3faf5, type: 3}
-  m_Name: (B) MoveTimeline
+  m_Name: RaceAway195
   m_EditorClassIdentifier: 
   m_NextId: 0
   m_Tracks:
@@ -20,7 +20,7 @@ MonoBehaviour:
   m_EditorSettings:
     m_Framerate: 60
   m_DurationMode: 0
---- !u!114 &114064210671161976
+--- !u!114 &114275171414052184
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
@@ -28,11 +28,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 00e300adbdfba55428a438c1d2b5a639, type: 3}
+  m_Script: {fileID: 11500000, guid: 24b75fbfaa2b710428733393da6691ed, type: 3}
   m_Name: FabulaAsset
   m_EditorClassIdentifier: 
   Schema:
-    exposedName: a854d00ef52b0984f950cbbab47355ea
+    exposedName: 754eedeaed7bdac4faee12831d54c50b
     defaultValue: {fileID: 0}
   Constraints: []
   agentOrient: 0
@@ -56,6 +56,33 @@ MonoBehaviour:
   m_Parent: {fileID: 11400000}
   m_Children: []
   m_Clips: []
+--- !u!114 &114727965853620486
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41d87848e7f410f4795282cc0da46ada, type: 3}
+  m_Name: DiscourseAsset
+  m_EditorClassIdentifier: 
+  camSchema:
+    scale: 3
+    targetLocation: 
+    targetOrientation: 0
+    hangle: 6
+    vangle: 2
+  targetSchema:
+    orient: 0
+    location: 
+    ActionSegs:
+    - actionVarName: Action1
+      targetVarName: 
+      startPercent: 0
+      endPercent: 0
+  camDirective: 3
+  Constraints: []
 --- !u!114 &114879984951233900
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -76,8 +103,8 @@ MonoBehaviour:
   m_Clips:
   - m_Start: 0
     m_ClipIn: 0
-    m_Asset: {fileID: 114966071705993188}
-    m_UnderlyingAsset: {fileID: 114966071705993188}
+    m_Asset: {fileID: 114727965853620486}
+    m_UnderlyingAsset: {fileID: 114727965853620486}
     m_Duration: 5
     m_TimeScale: 1
     m_ParentTrack: {fileID: 114879984951233900}
@@ -152,8 +179,8 @@ MonoBehaviour:
   m_Clips:
   - m_Start: 0
     m_ClipIn: 0
-    m_Asset: {fileID: 114064210671161976}
-    m_UnderlyingAsset: {fileID: 114064210671161976}
+    m_Asset: {fileID: 114275171414052184}
+    m_UnderlyingAsset: {fileID: 114275171414052184}
     m_Duration: 5
     m_TimeScale: 1
     m_ParentTrack: {fileID: 114944695894505090}
@@ -208,29 +235,3 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: Action1
     m_Version: 1
---- !u!114 &114966071705993188
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fedf28a971535474fbacb1991bd0bc37, type: 3}
-  m_Name: DiscourseAsset
-  m_EditorClassIdentifier: 
-  camSchema:
-    scale: 4
-    targetLocation: 
-    targetOrientation: 0
-    hangle: 4
-    vangle: 1
-  targetSchema:
-    orient: 0
-    location: 
-    ActionSegs:
-    - actionVarName: Action1
-      targetVarName: 
-      startPercent: 0
-      endPercent: 1
-  Constraints: []

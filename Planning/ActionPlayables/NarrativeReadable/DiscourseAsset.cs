@@ -1,4 +1,5 @@
 ﻿using BoltFreezer.Camera;
+using BoltFreezer.Camera.CameraEnums;
 using CameraNamespace;
 using PlanningNamespace;
 using System;
@@ -15,6 +16,7 @@ namespace TimelineClipsNamespace
     {
         public CamSchema camSchema;
         public CamTargetSchema targetSchema;
+        public CamDirective camDirective;
         public List<string> Constraints;
 
         public override Playable CreatePlayable(PlayableGraph graph, GameObject owner)

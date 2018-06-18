@@ -71,7 +71,7 @@ public class CamSchemaTest : MonoBehaviour {
         if (resetPlayableDirectors)
         {
             resetPlayableDirectors = false;
-            fabExecutePlanScript.ResetExternally();
+            //fabExecutePlanScript.ResetExternally();
             discExecutePlanScript.ResetExternally();
         }
     }
@@ -102,22 +102,22 @@ public class CamSchemaTest : MonoBehaviour {
         fabExecutePlanScript = fabExecutePlanObject.GetComponent<UnityPlanExecutor>();
 
         // Instantiate Timeline Components
-        fabExecutePlanScript.InstantiateExternally();
-        // Create Action
-        InstantiateFabulaTimeline(fabExecutePlanScript);
-        // Start Execution
-        fabExecutePlanScript.ExecuteExternally();
+        //fabExecutePlanScript.InstantiateExternally();
+        //// Create Action
+        //InstantiateFabulaTimeline(fabExecutePlanObject.GetComponent<PlayableDirector>());
+        //// Start Execution
+        //fabExecutePlanScript.ExecuteExternally();
 
-        // Test if camera shot is suitable for a transition to a next action.
-        discExecutePlanScript.InitiateExternally();
-        // reference cinemachine virtual cam
-        var cvc = camObject.GetComponent<CinemachineVirtualCamera>();
-        cvc.m_LookAt = terms[0].transform;
-        camObject.GetComponent<CinemachineCameraBody>().FocusTransform = terms[0].transform;
-        // create clip starting at 0 and lasting for arbitrary time
-        discExecutePlanScript.AddClip(cvc, fabExecutePlanObject.GetComponent<PlayableDirector>(), 0, 0, 10, camObject.name);
-        // Start Execution
-        discExecutePlanScript.ExecuteExternally();
+        //// Test if camera shot is suitable for a transition to a next action.
+        //discExecutePlanScript.InitiateExternally();
+        //// reference cinemachine virtual cam
+        //var cvc = camObject.GetComponent<CinemachineVirtualCamera>();
+        //cvc.m_LookAt = terms[0].transform;
+        //camObject.GetComponent<CinemachineCameraBody>().FocusTransform = terms[0].transform;
+        //// create clip starting at 0 and lasting for arbitrary time
+        //discExecutePlanScript.AddClip(cvc, fabExecutePlanObject.GetComponent<PlayableDirector>(), 0, 0, 10, camObject.name);
+        //// Start Execution
+        //discExecutePlanScript.ExecuteExternally();
     }
 
     public void SetInitial(UnityActionOperator ua)
@@ -146,21 +146,21 @@ public class CamSchemaTest : MonoBehaviour {
     }
 
     // Sets up fabula timeline
-    public void InstantiateFabulaTimeline(UnityPlanExecutor executePlanScript)
+    public void InstantiateFabulaTimeline(PlayableDirector pd)
     {
         double startTime = 0;
-        startTime = ProcessInstructionsForUnityAction(executePlanScript, action, unityAction, terms, startTime);
-        ProcessInstructionsForUnityAction(executePlanScript, action2, unityAction2, terms2, startTime);
+        startTime = ProcessInstructionsForUnityAction(pd, action, unityAction, terms, startTime);
+        ProcessInstructionsForUnityAction(pd, action2, unityAction2, terms2, startTime);
     }
 
-    public static double ProcessInstructionsForUnityAction(UnityPlanExecutor ep, GameObject a, UnityActionOperator ua, List<GameObject> actionTerms, double startTime)
+    public static double ProcessInstructionsForUnityAction(PlayableDirector pd, GameObject a, UnityActionOperator ua, List<GameObject> actionTerms, double startTime)
     {
         var instructions = ua.UnityInstructions;
 
         double accumulatedTime = 0;
         foreach (var instruction in instructions)
         {
-            var thisCI = ep.ProcessInstruction(a, instruction, actionTerms, startTime + accumulatedTime, 1);
+            //var thisCI = UnityPlanExecutor.ProcessInstruction(pd, a, instruction, actionTerms, startTime + accumulatedTime, 1);
             accumulatedTime += 1;
         }
         startTime = startTime + accumulatedTime;

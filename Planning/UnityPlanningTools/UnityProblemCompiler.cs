@@ -112,10 +112,13 @@ namespace PlanningNamespace
                 initialPredicateList.Add(pred2 as IPredicate);
                 Debug.Log(pred.ToString());
                 Debug.Log(pred2.ToString());
-                var obsPred = new Predicate("obs", new List<ITerm>() { pred as ITerm }, true);
-                initialPredicateList.Add(obsPred as IPredicate);
-                var obsPred2 = new Predicate("obs", new List<ITerm>() { pred2 as ITerm }, true);
-                initialPredicateList.Add(obsPred2 as IPredicate);
+                if (DiscourseToo)
+                {
+                    var obsPred = new Predicate("obs", new List<ITerm>() { pred as ITerm }, true);
+                    initialPredicateList.Add(obsPred as IPredicate);
+                    var obsPred2 = new Predicate("obs", new List<ITerm>() { pred2 as ITerm }, true);
+                    initialPredicateList.Add(obsPred2 as IPredicate);
+                }
             }
         }
 

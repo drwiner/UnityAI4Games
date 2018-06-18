@@ -6,6 +6,7 @@ using BoltFreezer.PlanTools;
 using BoltFreezer.Utilities;
 using CameraNamespace;
 using Cinematography;
+using GraphNamespace;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,14 +17,45 @@ namespace PlanningNamespace
 {
     public static class TimelineDecompositionHelper
     {
-        public static Tuple<Dictionary<int, Orient>, Dictionary<int, string>> GetOrientsAndLocations(Decomposition decomp, Dictionary<string, Vector3> locationMap)
+        public static Dictionary<Edge, Dictionary<double, List<CamSchema>>> NavCamDict;
+        public static Dictionary<string, Vector3> LocationMap;
+        public static TileGraph LocationGraph;
+        public static List<CamSchema> CamOptions;
+
+        public static void SetCamsAndLocations(GameObject CameraHost, GameObject LocationHost)
+        {
+            CamOptions = new List<CamSchema>();
+
+            foreach(var cam in CameraCacheManager.CachedCams)
+            {
+                CamOptions.Add(cam);
+            }
+
+            NavCamDict = CameraHost.GetComponent<CamGen>().navCamDictionary;
+
+
+            LocationMap = new Dictionary<string, Vector3>();
+            for (int i = 0; i < LocationHost.transform.childCount; i++)
+            {
+                var locationObj = LocationHost.transform.GetChild(i);
+                if (!locationObj.gameObject.activeSelf)
+                {
+                    continue;
+                }
+                LocationMap[locationObj.name] = locationObj.transform.position;
+            }
+
+            LocationGraph = LocationHost.GetComponent<TileGraph>();
+        }
+
+        public static Tuple<Dictionary<int, Orient>, Dictionary<int, string>> GetOrientsAndLocations(Decomposition decomp)
         {
             var orientDict = new Dictionary<int, Orient>();
             var locationDict = new Dictionary<int, string>();
 
             foreach (var substep in decomp.SubSteps)
             {
-                var orientEnum = MapToNearestOrientation(substep as PlanStep, locationMap);
+                var orientEnum = MapToNearestOrientation(substep as PlanStep);
                 orientDict[substep.ID] = orientEnum;
 
                 string earliestTermHack = "";
@@ -47,11 +79,11 @@ namespace PlanningNamespace
         }
 
         // TODO: this is hacky because it's not actually based on Orientation Codes in cineamtography attributes
-        public static Orient MapToNearestOrientation(PlanStep step, Dictionary<string, Vector3> locationMap)
+        public static Orient MapToNearestOrientation(PlanStep step)
         {
             // determine what the orientation is
             Orient orientEnum;
-            var orientFloat = OrientInFloat(locationMap[step.Terms[step.Terms.Count - 1].Constant], locationMap[step.Terms[step.Terms.Count - 2].Constant]);
+            var orientFloat = OrientInFloat(LocationMap[step.Terms[step.Terms.Count - 1].Constant], LocationMap[step.Terms[step.Terms.Count - 2].Constant]);
             while (orientFloat > 360)
             {
                 orientFloat -= 360;
@@ -65,23 +97,40 @@ namespace PlanningNamespace
             {
                 orientEnum = Orient.o0;
             }
+            else if (orientFloat >= 25 && orientFloat <= 65)
+            {
+                orientEnum = Orient.o45;
+            }
             else if (orientFloat > 65 && orientFloat < 115)
             {
                 orientEnum = Orient.o90;
+            }
+            else if (orientFloat >= 115 && orientFloat <= 155)
+            {
+                orientEnum = Orient.o135;
             }
             else if (orientFloat > 155 && orientFloat < 205)
             {
                 orientEnum = Orient.o180;
             }
+            else if (orientFloat >= 205 && orientFloat <= 245)
+            {
+                orientEnum = Orient.o225;
+            }
             else if (orientFloat > 245 && orientFloat < 295)
             {
                 orientEnum = Orient.o270;
             }
+            else if (orientFloat >= 295 && orientFloat <= 335)
+            {
+                orientEnum = Orient.o305;
+            }
             else
             {
-                Debug.Log(orientFloat);
-                Debug.Log("not a good orientation calculation or else not correct positioning of locations");
-                throw new System.Exception();
+                orientEnum = Orient.None;
+               // Debug.Log(orientFloat);
+                //Debug.Log("not a good orientation calculation or else not correct positioning of locations");
+                //throw new System.Exception();
             }
             return orientEnum;
         }
@@ -90,8 +139,9 @@ namespace PlanningNamespace
         /// The Decomposition is composed of a sub-plan with at least sub-step at height "height"
         /// </summary>
         /// <returns>A list of decompositions with ground terms and where each sub-step is ground. </returns>
-        public static List<TimelineDecomposition> Compose(int height, TimelineDecomposition TD, List<CamSchema> camOptions, Dictionary<string, Vector3> locationMap)
+        public static List<TimelineDecomposition> Compose(int height, TimelineDecomposition TD)
         {
+            Debug.Log("Composing HTN for " + TD.Name);
             ///////////////////////////////////////
             // START BY ADDING BINDINGS TO TERMS //
             ///////////////////////////////////////
@@ -147,18 +197,24 @@ namespace PlanningNamespace
                 foreach (var substep in decompClone.SubSteps)
                 {
                     var op = substep.Action as Operator;
+
                     foreach (var term in substep.Terms)
                     {
-                        op.AddBinding(term.Variable, varDict[term.Variable]);
+                        if (substep.Terms.Any(t => varDict.ContainsKey(t.Variable)))
+                        {
+                            op.AddBinding(term.Variable, varDict[term.Variable]);
+                        }
                     }
+
                     foreach (var precon in substep.Preconditions)
                     {
-                        foreach (var term in precon.Terms)
+                        for (int i = 0; i < precon.Terms.Count; i++)// term in precon.Terms)
                         {
+                            var term = precon.Terms[i];
                             if (!term.Bound)
                             {
+                                // 
                                 var decompTerm = decompClone.Terms.First(dterm => dterm.Variable.Equals(term.Variable));
-                                op.Terms.Add(term);
                                 op.AddBinding(term.Variable, decompTerm.Constant);
                             }
                         }
@@ -170,7 +226,7 @@ namespace PlanningNamespace
                             if (!term.Bound)
                             {
                                 var decompTerm = decompClone.Terms.First(dterm => dterm.Variable.Equals(term.Variable));
-                                op.Terms.Add(term);
+                              //  op.Terms.Add(term);
                                 op.AddBinding(term.Variable, decompTerm.Constant);
                             }
                         }
@@ -188,7 +244,7 @@ namespace PlanningNamespace
                 foreach (Tuple<TimelineDecomposition, Dictionary<int, IPlanStep>> decompPackage in fabulaGroundedDecompMap)
                 {
                     // get candidates and ground for camera steps
-                    var newGroundDecomps = TimelineDecompositionHelper.FilterTimelineDecompCandidates(TD, decompPackage, height, camOptions, locationMap);
+                    var newGroundDecomps = TimelineDecompositionHelper.FilterTimelineDecompCandidates(TD, decompPackage, height);
 
                     foreach (var gdecomp in newGroundDecomps)
                     {
@@ -209,6 +265,8 @@ namespace PlanningNamespace
             Dictionary<int, Orient> orientDict)
         {
             bool fail = false;
+
+            
 
             // check with constraints. If we had separate constraints for fabula and discourse here, then we can filter fabula steps by these constraints earlier.
             foreach (var constraint in fabConstraints)
@@ -265,8 +323,7 @@ namespace PlanningNamespace
         /// <param name="camOptions"> From "Cameras" GameObject </param>
         /// <param name="locationMap"> Mapping location names to specific coordinates (used to determine orientation in space, and possibly for navigation estimates. </param>
         /// <returns> A list of TimelineDecomposition which all have fabula-valid and discourse-valid sub-plan</returns>
-        public static List<TimelineDecomposition> FilterTimelineDecompCandidates(TimelineDecomposition TD, Tuple<TimelineDecomposition, Dictionary<int, IPlanStep>> decompPackage, int height,
-            List<CamSchema> camOptions, Dictionary<string, Vector3> locationMap)
+        public static List<TimelineDecomposition> FilterTimelineDecompCandidates(TimelineDecomposition TD, Tuple<TimelineDecomposition, Dictionary<int, IPlanStep>> decompPackage, int height)
         {
             var timelineDecompList = new List<TimelineDecomposition>();
 
@@ -274,7 +331,7 @@ namespace PlanningNamespace
             var substepDict = decompPackage.Second;
 
             // mapping ID of substeps to orientations
-            var orientLocationTuple = GetOrientsAndLocations(decomp, locationMap);
+            var orientLocationTuple = GetOrientsAndLocations(decomp);
             var orientDict = orientLocationTuple.First;
             var locationDict = orientLocationTuple.Second;
 
@@ -282,7 +339,7 @@ namespace PlanningNamespace
             //var discourseSubStepList = new List<CamPlanStep>();
 
             // create permutation for each combination of legal subcams
-            var permList = GetPermutationCameraShots(TD.discourseSubSteps, substepDict, TD.fabulaActionNameMap, orientDict, locationDict, camOptions);
+            var permList = GetPermutationCameraShots(TD.discourseSubSteps, substepDict, TD.fabulaActionNameMap, orientDict, locationDict);
             //ist<CamPlanStep> discourseSubSteps, Dictionary<int, IPlanStep> fabsubstepDict, Dictionary<string, IPlanStep> fabulaActionNameMap,
             //Dictionary<int, int> orientDict, Dictionary< int, string> locationDict, List<CamAttributesStruct> camOptions
 
@@ -301,6 +358,25 @@ namespace PlanningNamespace
                     // a reference to the j'th discourse step
                     var camStep = TD.discourseSubSteps[j].Clone() as CamPlanStep;
                     camStep.CamDetails = combination[j].Clone() as CamSchema;
+
+                    int firstID = -1;
+                    // reference
+                    foreach(var actionseg in camStep.TargetDetails.ActionSegs)
+                    {
+                        
+                        var ps = substepDict[TD.fabulaActionNameMap[actionseg.actionVarName].ID];
+                        if (firstID == -1)
+                        {
+                            firstID = ps.ID;
+                        }
+                        // need to keep name the same so that we can reference later... UGAF GroundDecompositionsToCompositeSteps (Line 212)
+                        //actionseg.actionVarName = ps.ToString();
+                        actionseg.ActionID = ps.ID;
+                        actionseg.targetVarName = ps.Terms[0].Constant;
+                    }
+                    camStep.TargetDetails.location = locationDict[firstID];
+                    camStep.TargetDetails.orient = orientDict[firstID];
+                    
                     //camStep.CamObject = camObj.gameObject;
 
                     // a cloning of the cam plan step
@@ -308,7 +384,7 @@ namespace PlanningNamespace
                     //newPlanStep.CamObject = camObj.gameObject;
 
                     // storing a mapping from old cam plan step ID to new cam plan step
-                    camSubStepDict[camStep.ID] = camStep;
+                    camSubStepDict[TD.discourseSubSteps[j].ID] = camStep;
                     newDiscourseSubSteps.Add(camStep);
                 }
 
@@ -393,7 +469,7 @@ namespace PlanningNamespace
                 foreach (var linkworld in linkWorlds)
                 {
                     var newDecomp = decomp.Clone() as TimelineDecomposition;
-                    newDecomp.discourseSubSteps = TD.discourseSubSteps;
+                    newDecomp.discourseSubSteps = newDiscourseSubSteps;
                     newDecomp.discOrderings = newDOrderings;
                     newDecomp.fabCntgs = newFabCntgs;
                     newDecomp.discCntgs = newDiscCntgs;
@@ -406,8 +482,11 @@ namespace PlanningNamespace
             return timelineDecompList;
         }
 
-        public static List<List<CamSchema>> GetPermutationCameraShots(List<CamPlanStep> discourseSubSteps, Dictionary<int, IPlanStep> fabsubstepDict, Dictionary<string, PlanStep> fabulaActionNameMap,
-            Dictionary<int, Orient> orientDict, Dictionary<int, string> locationDict, List<CamSchema> camOptions)
+        public static List<List<CamSchema>> GetPermutationCameraShots(List<CamPlanStep> discourseSubSteps, 
+            Dictionary<int, IPlanStep> fabsubstepDict, 
+            Dictionary<string, PlanStep> fabulaActionNameMap,
+            Dictionary<int, Orient> orientDict, 
+            Dictionary<int, string> locationDict)
         {
             List<List<CamSchema>> permList = new List<List<CamSchema>>();
             List<CamSchema> cndtSet;
@@ -421,9 +500,11 @@ namespace PlanningNamespace
                 Orient targetOrient = Orient.None;
 
                 // The action being filmed must be in the right location and orientation. Here is the name of target.
-                var nameOfTargetOrAction = discStep.TargetDetails.ActionSegs[0].actionVarName;
+                var actionSeg = discStep.TargetDetails.ActionSegs[0];
+                var nameOfTargetOrAction = actionSeg.actionVarName;
+                
                 enumeratedActionNames.Add(nameOfTargetOrAction);
-
+                bool isNav = false;
                 // the target should be an Action.
                 if (fabulaActionNameMap.ContainsKey(nameOfTargetOrAction))
                 {
@@ -433,15 +514,49 @@ namespace PlanningNamespace
                     // use old ID of actionVar to get new updated plan step
                     var substepTarget = fabsubstepDict[actionVar.ID];
 
-                    // use new substep to access location of action
-                    targetLocation = locationDict[substepTarget.ID];
-                    discStepClone.TargetDetails.location = targetLocation;
-                    // camschema.targetLocation = 
-                    //  discClipSchema.asset.targetSchema.location = locationDict[substepTarget.ID];
 
                     // use new substep to access orientation of action
                     targetOrient = orientDict[substepTarget.ID];
                     discStepClone.TargetDetails.orient = targetOrient;
+
+                    var unityActionTag = GameObject.Find(substepTarget.Name).tag;
+                    if (unityActionTag == "navigation")
+                    {
+                        isNav = true;
+                        // then the camera options for this shot is one that 
+                        // GetCamsForActionSeg(ActionSegs[0]);
+                        var traversededge = LocationGraph.FindRelevantEdge(substepTarget.Terms[1].Constant, substepTarget.Terms[2].Constant);
+
+                        var navCamOptions = NavCamDict[traversededge][actionSeg.endPercent - actionSeg.startPercent];
+                        cndtSet = new List<CamSchema>();
+                        foreach (var navcamoption in navCamOptions)
+                        {
+                            // Cam Schema must be consistent with option
+                            if (!discStepClone.CamDetails.IsConsistent(navcamoption))
+                            {
+                                continue;
+                            }
+
+                            if (!navcamoption.targetOrientation.Equals(targetOrient))
+                            {
+                                continue;
+                            }
+                            cndtSet.Add(navcamoption);
+                        }
+                        permList.Add(cndtSet);
+                        continue;
+                    }
+                    else
+                    {
+                        // use new substep to access location of action
+                        targetLocation = locationDict[substepTarget.ID];
+                        discStepClone.TargetDetails.location = targetLocation;
+                    }
+
+                    // camschema.targetLocation = 
+                    //  discClipSchema.asset.targetSchema.location = locationDict[substepTarget.ID];
+
+                    
                     // discClipSchema.asset.targetSchema.orient = orientDict[substepTarget.ID];
                 }
                 else
@@ -453,7 +568,7 @@ namespace PlanningNamespace
 
                 cndtSet = new List<CamSchema>();
                 // Filtering stage: For each camera object...
-                foreach (var camOption in camOptions)
+                foreach (var camOption in CamOptions)
                 {
                     // Cam Schema must be consistent with option
                     if (!discStepClone.CamDetails.IsConsistent(camOption))
