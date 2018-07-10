@@ -49,7 +49,7 @@ namespace TimelineClipsNamespace
         {
             if (_gameObject != null)
             {
-                _originalRotation = _gameObject.transform.rotation;
+                //_originalRotation = _gameObject.transform.rotation;
                 //finalRotation = _Controller.Orient(_steerTo);
                 _Controller.Orient(_steerTo);
             }
@@ -59,7 +59,7 @@ namespace TimelineClipsNamespace
         {
             if (_gameObject != null)
             {
-                _originalRotation = _gameObject.transform.rotation;
+                //_originalRotation = _gameObject.transform.rotation;
             }
         }
 

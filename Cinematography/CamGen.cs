@@ -45,12 +45,6 @@ namespace CameraNamespace {
             get { return cameraList; }
         }
 
-        // Use this for initialization
-        void Start()
-        {
-            //Initiate();
-        }
-
         public void Initiate()
         {
             if (CinematographyAttributes.lensFovData != null && (cameraList != null && cameraList.Count > 0))
@@ -164,6 +158,10 @@ namespace CameraNamespace {
                     Debug.Log("Cam Cache Failure");
                 }
                 numCams = CameraCacheManager.CachedCams.Count;
+
+                // Just, cluster cam schemas by their location.
+                navCamDictionary = CameraCacheManager.CalculateNavCamDictFromCache();
+                Debug.Log("Generated Navigation-based Dictionary of Cams");
             }
 
 
@@ -230,7 +228,7 @@ namespace CameraNamespace {
                                 continue;
                             }
                             // Create Camera
-                            var Cam = CreateCamera(location, frame, orient, hangle, vangle);
+                            var Cam = CreateCamera(actors[0].gameObject, location, frame, orient, hangle, vangle);
                             if (Cam == null)
                             {
                                 continue;
@@ -253,7 +251,53 @@ namespace CameraNamespace {
             }
         }
 
-        public GameObject CreateCamera(GameObject loc, FramingType scale, Orient orient, Hangle hangle, Vangle vangle)
+        public static GameObject CreateCameraFromSchema(GameObject target, CamSchema cs)
+        {
+            GameObject loc;
+            FramingType scale;
+            Orient orient;
+            Hangle hangle;
+            Vangle vangle;
+
+            try
+            {
+                loc = GameObject.Find(cs.targetLocation);
+            }
+            catch
+            {
+                throw new System.Exception(string.Format("cannot find targetLocation or is blank {0}", cs.targetLocation));
+            }
+
+            orient = cs.targetOrientation;
+
+            if (orient.Equals(Orient.None))
+            {
+                throw new System.Exception(string.Format("cannot find orientation or is blank {0}", cs.targetOrientation));
+            }
+
+            scale = cs.scale;
+            if (scale.Equals(FramingType.None))
+            {
+                throw new System.Exception(string.Format("cannot find frame or is blank {0}", cs.scale));
+            }
+
+            hangle = cs.hangle;
+            if (hangle.Equals(Hangle.None))
+            {
+                throw new System.Exception(string.Format("cannot find hangle or is blank {0}", cs.hangle));
+            }
+
+            vangle = cs.vangle;
+            if (vangle.Equals(Vangle.None))
+            {
+                vangle = Vangle.Eye;
+            }
+
+            return CreateCamera(target, loc, scale, orient, hangle, vangle);
+          
+        }
+
+        public static GameObject CreateCamera(GameObject target, GameObject loc, FramingType scale, Orient orient, Hangle hangle, Vangle vangle)
         {
             //Debug.Log(scale);
             GameObject camHost = new GameObject();
@@ -266,13 +310,13 @@ namespace CameraNamespace {
             camattributes.Set(scale, loc.name, orient, hangle, vangle);
 
             // composer parameters TODO: tweak via separate gameobject component structure
-            cc.m_HorizontalDamping = 10;
-            cc.m_VerticalDamping = 10;
+            cc.m_HorizontalDamping = 0.2f;
+            cc.m_VerticalDamping = 0.2f;
             cc.m_LookaheadTime = 0.2f;
             cc.m_DeadZoneWidth = 0.25f;
             cc.m_DeadZoneHeight = 0.25f;
-            cc.m_SoftZoneWidth = 0.5f;
-            cc.m_SoftZoneHeight = 0.5f;
+            cc.m_SoftZoneWidth = 1.5f;
+            cc.m_SoftZoneHeight = 1.5f;
 
             FramingParameters framing_data;
             try
@@ -303,7 +347,7 @@ namespace CameraNamespace {
             var camTransformDirection = DegToVector3(camattributes.OrientInt + camattributes.HangleInt);
 
             // calculate where to put camera
-            var fakeTarget = CreateFakeTarget(actors[0].gameObject, loc.transform);
+            var fakeTarget = CreateFakeTarget(target, loc.transform);
             var camDist = CinematographyAttributes.CalcCameraDistance(fakeTarget, scale);
 
             cbod.FocusDistance = camDist;
@@ -354,7 +398,7 @@ namespace CameraNamespace {
             return _cameraList;
         }
 
-        public GameObject CreateFakeTarget(GameObject cndtTarget, Transform loc)
+        public static GameObject CreateFakeTarget(GameObject cndtTarget, Transform loc)
         {
             var fakeTarget = GameObject.Instantiate(cndtTarget);
             fakeTarget.SetActive(true);
@@ -362,7 +406,7 @@ namespace CameraNamespace {
             return fakeTarget;
         }
 
-        public bool IsValidShot(Vector3 camPosition, GameObject target)
+        public static bool IsValidShot(Vector3 camPosition, GameObject target)
         {
             target.SetActive(true);
 
@@ -515,21 +559,22 @@ namespace CameraNamespace {
             }
         }
 
-        public List<CamSchema> GetCamsForEdgeAndPercent(Edge edge, double percent)
+        public static List<CamSchema> GetCamsForEdgeAndPercent(Dictionary<Edge, Dictionary<double, List<CamSchema>>> navCamDict, Edge edge, double percent)
         {
-            var intermediateLocationCamDictionary = navCamDictionary[edge];
+            var intermediateLocationCamDictionary = navCamDict[edge];
             double closestKey = 0;
             double bestDistance = 1000;
             foreach (var key in intermediateLocationCamDictionary.Keys)
             {
-                if ((percent - key) < bestDistance)
+                var thisDistance = Math.Abs(percent - key);
+                if (thisDistance < bestDistance)
                 {
-                    bestDistance = percent - key;
+                    bestDistance = thisDistance;
                     closestKey = key;
                 }
-                else if (key > percent)
+                else if(closestKey != 0)
                 {
-                    // we've passed it already
+                    // then we must have passed it; we've found a closest key, and this one isn't any closer.
                     break;
                 }
             }

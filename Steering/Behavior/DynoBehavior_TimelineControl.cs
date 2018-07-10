@@ -226,8 +226,8 @@ namespace SteeringNamespace
             }
         }
 
-        private float positionRefx, positionRefz;
-        public void Steer(Vector3 origin, Vector3 target, bool departed, bool arrive)
+        //private float positionRefx, positionRefz;
+        public void Steer(Vector3 origin, Vector3 target, bool depart, bool arrive)
         {
             // assume position already set
 
@@ -243,8 +243,9 @@ namespace SteeringNamespace
             //Mathf.SmoothDamp(transform.position.z, origin.z, ref positionRefz, 1f);
             //transform.position = origin;
             KinematicBody.Position = transform.position;
+           
 
-            if (departed)
+            if (!depart)
             {
                 // current Velocity is the position + directino * max speed
                 var direction = currentGoal - transform.position;
@@ -254,6 +255,11 @@ namespace SteeringNamespace
                 KinematicBody.setOrientation(KinematicBody.getNewOrientation(currentVelocity));
                 transform.position = new Vector3(KinematicBody.Position.x, transform.position.y, KinematicBody.Position.z);
                 transform.rotation = Quaternion.Euler(0f, KinematicBody.getOrientation() * Mathf.Rad2Deg - 90f, 0f);
+            }
+            else
+            {
+                // Should start motion-less (do extra work if you want to have fluid motion from last action)
+                KinematicBody.setVelocity(Vector3.zero);
             }
 
             steering = true;
@@ -267,15 +273,15 @@ namespace SteeringNamespace
             orienting = true;
             steering = false;
 
-            var direction = currentGoal - transform.position;
-            var currentVelocity = direction.normalized * SP.MAXSPEED;
-            KinematicBody.setOrientation(KinematicBody.getNewOrientation(currentVelocity));
-            transform.rotation = Quaternion.Euler(0f, KinematicBody.getOrientation() * Mathf.Rad2Deg - 90f, 0f);
-            // var targetOrientation = KinematicBody.getNewOrientation(currentGoal - transform.position);
-            //rotation = goal.eulerAngles;
-            //  var rotation = targetOrientation - KinematicBody.getOrientation();
+            //var direction = currentGoal - transform.position;
+            //var currentVelocity = direction.normalized * SP.MAXSPEED;
 
-            // return rotation;
+            // This action implies stationary
+            KinematicBody.setVelocity(Vector3.zero);
+
+            // Setting orientation like a jerk
+            //KinematicBody.setOrientation(KinematicBody.getNewOrientation(currentVelocity));
+            //transform.rotation = Quaternion.Euler(0f, KinematicBody.getOrientation() * Mathf.Rad2Deg - 90f, 0f);
         }
 
         public void InformMasterIsPlaying(int whichList, bool isPlaying)
@@ -294,13 +300,14 @@ namespace SteeringNamespace
 
         public int Register(SteeringPlayable P, bool isMaster) 
         {
-            
+            // Get the index of latest list of steering playables; 0 index if empty.
             var whichList = SteerList.Count-1;
             if (whichList < 0)
             {
                 whichList = 0;
             }
 
+            // If the steer clip is a master, then it is granted a new list
             if (isMaster)
             {
                 var newList = new List<SteeringPlayable>();
@@ -314,11 +321,14 @@ namespace SteeringNamespace
                 return whichList + 1;
             }
             
+            // This condition should be impossible.
             if (SteerList[whichList] == null)
             {
                 Debug.Log("master should always get added first");
                 throw new System.Exception();
             }
+
+            // If the steering clip is NOT a master, and there is at least 1 existing master, then 
             SteerList[whichList].Add(P);
             return whichList;
         }

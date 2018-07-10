@@ -20,16 +20,16 @@ public class CamTestOnPlay : MonoBehaviour {
         get { return camGen.CameraList; }
     }
 
-    void Awake()
-    {
-        camGen = GetComponent<CamGen>();
-        if (CameraList == null)
-        {
-            camGen.Initiate();
-            camGen.Assemble();
-        }
-        numCams = CameraList.Count;
-    }
+    //void Awake()
+    //{
+    //    camGen = GetComponent<CamGen>();
+    //    if (CameraList == null)
+    //    {
+    //        camGen.Initiate();
+    //        camGen.Assemble();
+    //    }
+    //    numCams = CameraList.Count;
+    //}
 
     // Use this for initialization
     void Start () {

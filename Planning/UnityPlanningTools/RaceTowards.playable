@@ -40,7 +40,12 @@ MonoBehaviour:
   targetSchema:
     orient: 0
     location: 
-    ActionSegs: []
+    ActionSegs:
+    - actionVarName: Action1
+      targetVarName: 
+      actiontypeID: 0
+      startPercent: 0
+      endPercent: 1
   camDirective: 2
   Constraints: []
 --- !u!114 &114520960298040954

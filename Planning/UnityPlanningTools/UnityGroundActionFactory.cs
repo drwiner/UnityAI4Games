@@ -10,6 +10,7 @@ using BoltFreezer.PlanSpace;
 using BoltFreezer.Utilities;
 using BoltFreezer.Scheduling;
 using BoltFreezer.DecompTools;
+using CompilationNamespace;
 
 namespace PlanningNamespace
 {
@@ -51,7 +52,7 @@ namespace PlanningNamespace
             if (compileCompositeSteps)
             {
                 compileCompositeSteps = false;
-                CompileCompositeSteps();
+                CreateSteps(GameObject.FindGameObjectWithTag("ProblemHost").GetComponent<UnityProblemCompiler>(), 1);
             }
 
             if (checkEffects)
@@ -88,8 +89,10 @@ namespace PlanningNamespace
 
         }
 
-        public void CompileCompositeSteps()
+        public void CompileCompositeSteps(int heightMax)
         {
+            
+
             CompositeSteps = 0;
             CompositeOps = new List<IOperator>();
             foreach (var unitydecomp in DecompositionSchemata)
@@ -98,9 +101,10 @@ namespace PlanningNamespace
                 {
                     unitydecomp.Read();
                     unitydecomp.Assemble();
-                    unitydecomp.Filter();
                 }
             }
+            // Now, all composite steps with height 1 are created, and the TimelineDecompositionHelper is loaded.\
+         //   for (int )
             var compositeSteps = GroundDecompositionsToCompositeSteps(DecompositionSchemata);
             foreach (var comp in compositeSteps)
             {
@@ -111,19 +115,62 @@ namespace PlanningNamespace
         }
 
 
-        public static void CreateSteps(UnityProblemCompiler UPC, List<UnityTimelineDecomp> DecompositionSchemata)
+        public void CreateSteps(UnityProblemCompiler UPC, int heightMax)
         {
+            DiscourseDecompositionHelper.SetCamsAndLocations(GameObject.FindGameObjectWithTag("CameraHost"), GameObject.FindGameObjectWithTag("Locations"));
+            
+            // Compile the Decomposition Schedule Schemata
             foreach (var unitydecomp in DecompositionSchemata)
             {
                 unitydecomp.GroundDecomps = new List<TimelineDecomposition>();
                 unitydecomp.reset = true;
                 unitydecomp.Read();
                 unitydecomp.Assemble();
-                unitydecomp.Filter();
-                Debug.Log("Read,Assemble, and Filter for unity decomp: " + unitydecomp.name);
+                unitydecomp.NonGroundTimelineDecomposition();
+                //unitydecomp.Filter();
+                Debug.Log("Read and Assemble for unity decomp: " + unitydecomp.name);
             }
-            var compositeSteps = GroundDecompositionsToCompositeSteps(DecompositionSchemata);
-            AddCompositeStepsToGroundActionFactory(UPC.initialPredicateList, UPC.goalPredicateList, compositeSteps);
+            
+            // For each height
+            for (int h = 0; h < heightMax; h++)
+            {
+                var newopsThisRound = new List<IOperator>();
+                foreach(var utd in DecompositionSchemata)
+                {
+                    var td = utd.PartialDecomp;
+                    var gdecomps = TimelineDecompositionHelper.Compose(h, td);
+                    foreach (var gdecomp in gdecomps)
+                    {
+                        var csc = new CompositeScheduleComposer(utd, gdecomp);
+                        var comp = csc.CreateCompositeSchedule();
+                        if (comp.Effects.Count == 0)
+                        {
+                            Debug.Log("couldn't create " + comp.ToString());
+                            continue;
+                        }
+                        comp.Height = h+1;
+                        newopsThisRound.Add(comp as IOperator);
+                    }
+                }
+
+                foreach(var op in newopsThisRound)
+                {
+                    GroundActionFactory.InsertOperator(op);
+                }
+                if (newopsThisRound.Count == 0)
+                {
+                    break;
+                }
+            }
+            
+            CacheMaps.Reset();
+            CacheMaps.CacheLinks(GroundActionFactory.GroundActions);
+            CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, UPC.goalPredicateList);
+
+            PrimaryEffectHack(new State(UPC.initialPredicateList) as IState);
+
+            //  var compositeSteps = GroundDecompositionsToCompositeSteps(DecompositionSchemata);
+            // AddCompositeStepsToGroundActionFactory(UPC.initialPredicateList, UPC.goalPredicateList, compositeSteps);
         }
 
         public static void AddCompositeStepsToGroundActionFactory(List<IPredicate> Initial, List<IPredicate> Goal, List<CompositeSchedule> compositeSteps)
@@ -155,7 +202,7 @@ namespace PlanningNamespace
             CacheMaps.CacheGoalLinks(IOpList, Goal);
         }
 
-            public void AddCompositeStepsToGroundActionFactory(List<CompositeSchedule> compositeSteps)
+        public void AddCompositeStepsToGroundActionFactory(List<CompositeSchedule> compositeSteps)
         {
             var goalConditions = InitialPlan.GoalStep.Preconditions;
             var originalOps = GroundActionFactory.GroundActions;
@@ -196,7 +243,7 @@ namespace PlanningNamespace
 
         public static List<CompositeSchedule> GroundDecompositionsToCompositeSteps(List<UnityTimelineDecomp> DecompositionSchemata)
         {
-            var compositeSteps = new List<CompositeSchedule>();
+            List<CompositeSchedule> compositeSteps = new List<CompositeSchedule>();
             foreach (var decompschema in DecompositionSchemata)
             {
                 foreach (var gdecomp in decompschema.GroundDecomps)
@@ -204,221 +251,10 @@ namespace PlanningNamespace
                     // use the fabulaActionNameMap to reference action var names to substeps
                     //var obseffects = new List<Tuple<CamPlanStep, List<Tuple<double, double>>>>();
                     // keeping track of every action's percentage observance
-                    var actionPercentDict = new Dictionary<int, List<Tuple<double, double>>>();
+                    var csc = new CompositeScheduleComposer(decompschema, gdecomp);
+                    var comp = csc.CreateCompositeSchedule();
 
-                    // gdecomp.fabulaActionNameMap[action.Name]
-
-                    for (int i = 0; i < gdecomp.discourseSubSteps.Count; i++)
-                    {
-                        var shot = gdecomp.discourseSubSteps[i];
-                        foreach (var actionseg in shot.TargetDetails.ActionSegs)
-                        {
-                            var actionsubstep = gdecomp.fabulaActionNameMap[actionseg.actionVarName];
-                            if (!actionPercentDict.ContainsKey(actionsubstep.ID))
-                            {
-                                actionPercentDict[actionsubstep.ID] = new List<Tuple<double, double>>();
-                            }
-                            actionPercentDict[actionsubstep.ID].Add(new Tuple<double, double>(actionseg.startPercent, actionseg.endPercent));
-                        }
-                    }
-
-                    // Track which intervals of actions are missing.
-                    var missingIntervalsInActions = new List<Tuple<IPlanStep, List<Tuple<double, double>>>>();
-
-                    // Track which steps are not observed to start or end
-                    List<IPlanStep> StepsObservedToStart = new List<IPlanStep>();
-                    List<IPlanStep> StepsNotObservedToStart = new List<IPlanStep>();
-                    List<IPlanStep> StepsNotObservedToEnd = new List<IPlanStep>();
-                    //List<IPlanStep> StepsObservedToEnd = new List<IPlanStep>();
-
-                    double latestTimeAccountedFor;
-                    bool observedEnding;
-                    var observedEffectsList = new List<IPredicate>();
-                    var observedEffectTuples = new List<Tuple<IPredicate, IPlanStep>>();
-                    for (int i =0; i < gdecomp.SubSteps.Count; i++)
-                    //foreach (var action in gdecomp.SubSteps)
-                    {
-                        var action = gdecomp.SubSteps[i];
-                        // Reset latest time accounted for
-                        latestTimeAccountedFor = 0;
-
-                        var missingTimes = new List<Tuple<double, double>>();
-                        var actionTuplesList = actionPercentDict[action.ID];
-                        observedEnding = true;
-                        for (int j = 0; j < actionTuplesList.Count; j++)
-                        {
-                            // Access action percent tuple
-                            var actionsegTuple = actionTuplesList[j];
-
-                            // Check if not observed to start
-                            if (j == 0 && actionsegTuple.First > 0.06)
-                            {
-                                StepsNotObservedToStart.Add(action);
-                            } 
-                            else if (i == 0 && j==0 && actionsegTuple.First <= 0.06)
-                            {
-                                StepsObservedToStart.Add(action);
-                                //else
-                                //{
-                                //    List<IPredicate> actionPreconditions = action.Preconditions.ToList();
-                                //    for(int k = i-1; k >= 0; k--)
-                                //    {
-                                //        var priorAction = gdecomp.SubSteps[k];
-                                //        foreach(var eff in priorAction.Effects)
-                                //        {
-                                //            if (actionPreconditions.Contains(eff))
-                                //            {
-                                //                // create a d-link
-                                //                var dlinkPred = new Predicate("obs", new List<ITerm>() { eff as ITerm }, true);
-                                //                var newDLink = new CausalLink<CamPlanStep>(dlinkPred as IPredicate, )
-                                //            }
-                                //        }
-                                //    }
-                                //}
-                            }
-
-                            // Check if missing interval
-                            if (actionsegTuple.First > latestTimeAccountedFor + 0.06)
-                            {
-                                // then there is missing time.
-                                var missingTime = new Tuple<double, double>(latestTimeAccountedFor, actionsegTuple.First);
-                                missingTimes.Add(missingTime);
-                            }
-
-                            // Check if not observed to end
-                            if (j == actionTuplesList.Count - 1 && actionsegTuple.Second < 1 - 0.06)
-                            {
-                                StepsNotObservedToEnd.Add(action);
-                                observedEnding = false;
-                            }
-
-                            // Update latest time in action account for.
-                            latestTimeAccountedFor = actionsegTuple.Second;
-                        }
-
-                        if (observedEnding)
-                        {
-                            foreach (var eff in action.Effects)
-                            {
-                                if (observedEffectsList.Contains(eff))
-                                {
-
-                                    foreach(var tupleItem in observedEffectTuples)
-                                    {
-                                        if (tupleItem.First.Equals(eff))
-                                        {
-                                            observedEffectTuples.Remove(tupleItem);
-                                            observedEffectTuples.Add(new Tuple<IPredicate, IPlanStep>(eff, action));
-                                            break;
-                                        }
-                                    }
-                                }
-
-                                var reversedEff = eff.GetReversed();
-                                if (observedEffectsList.Contains(reversedEff))
-                                {
-                                    observedEffectsList.Remove(reversedEff);
-                                }
-                                else
-                                {
-                                    observedEffectsList.Add(eff);
-                                    observedEffectTuples.Add(new Tuple<IPredicate, IPlanStep>(eff, action));
-                                }
-                            }
-
-                            // Add missing times per action to list of tuples
-                            missingIntervalsInActions.Add(new Tuple<IPlanStep, List<Tuple<double, double>>>(action, missingTimes));
-                        }
-                    }
-
-                    var initialStep = new PlanStep(new Operator("DummyInit", new List<IPredicate>(), new List<IPredicate>()));
-                    var goalStep = new PlanStep(new Operator("DummyGoal", new List<IPredicate>(), new List<IPredicate>()));
-                    var newLinksWithInitial = new List<CausalLink<IPlanStep>>();
-                    var newLinksWithGoal = new List<CausalLink<IPlanStep>>();
-
-                    /* Preconditions
-                        * 
-                        * foreach action  that is not observed to start, give precondition to observe its start
-                        * foreach action that IS observed to start, and is the first step observed
-                        */
-
-                    var preconditions = CreatePredicatesWithStepTermsViaName(StepsNotObservedToStart, "obs-starts");
-                    foreach(var stepAction in StepsObservedToStart)
-                    {
-                        foreach(var precon in stepAction.Preconditions)
-                        {
-                            //var obsTerm = new Predicate("obs", new List<ITerm>() { precon as ITerm }, true);
-                           // preconditions.Add(obsTerm);
-                            preconditions.Add(precon);
-                            initialStep.Effects.Add(precon);
-                            newLinksWithInitial.Add(new CausalLink<IPlanStep>(precon, initialStep, stepAction));
-                            stepAction.OpenConditions.Remove(precon);
-                        }
-                    }
-                    foreach(var precon in gdecomp.Preconditions)
-                    {
-                        if (!preconditions.Contains(precon))
-                        {
-                            preconditions.Add(precon);
-                        }
-                    }
-                    /* Effects
-                        * 
-                        * foreach action that is NOT observed to end, give effect that we observed it start
-                        * foreach action that IS observed to end, give effect that we observed its effects
-                        */
-                    
-                    var effects = CreatePredicatesWithStepTermsViaName(StepsNotObservedToEnd, "obs-starts");
-                    foreach (var observedEffect in observedEffectsList)
-                    {
-                        IPlanStep actingStep = new PlanStep();
-                        foreach(var tupleItem in observedEffectTuples)
-                        {
-                            if (tupleItem.First.Equals(observedEffect))
-                            {
-                                actingStep = tupleItem.Second;
-                                break;
-                            }
-                        }
-                        // cast predicate as term?
-                      //  var obsTerm = new Predicate("obs", new List<ITerm>() { observedEffect as ITerm}, true);
-                        //effects.Add(obsTerm);
-                        effects.Add(observedEffect);
-
-                        goalStep.Preconditions.Add(observedEffect);
-                        newLinksWithGoal.Add(new CausalLink<IPlanStep>(observedEffect, actingStep, goalStep));
-                        goalStep.OpenConditions.Remove(observedEffect);
-                    }
-                    foreach (var eff in gdecomp.Effects)
-                    {
-                        if (!effects.Contains(eff))
-                        {
-                            effects.Add(eff);
-                        }
-                    }
-
-                    // Create a composite step
-                    var compOp = new Operator(decompschema.name, preconditions, effects);
-                    compOp.Height = 1;
-                    compOp.NonEqualities = new List<List<ITerm>>();
-                    var comp = new CompositeSchedule(compOp);
-                    // this also limits preconditions and effects
-                    comp.InitialStep = initialStep;
-                    comp.GoalStep = goalStep;
-                    comp.ApplyDecomposition(gdecomp.Clone() as TimelineDecomposition);
-                    
-
-                    foreach(var link in newLinksWithInitial)
-                    {
-                        comp.SubLinks.Add(link);
-                        link.Tail.OpenConditions.Remove(link.Predicate);
-                    }
-
-                    foreach(var link in newLinksWithGoal)
-                    {
-                        comp.SubLinks.Add(link);
-                        link.Tail.OpenConditions.Remove(link.Predicate);
-                    }
+                    //var comp = GroundDecompToCompositeStep(decompschema, gdecomp);
 
                     //foreach(var tup in newLinksWithInitial)
                     //{

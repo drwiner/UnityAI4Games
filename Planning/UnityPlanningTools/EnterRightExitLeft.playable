@@ -137,8 +137,9 @@ MonoBehaviour:
     ActionSegs:
     - actionVarName: action1
       targetVarName: 
-      startPercent: 0
-      endPercent: 0
+      actiontypeID: 0
+      startPercent: 0.32
+      endPercent: 0.69
   camDirective: 2
   Constraints:
   - max duration 4
@@ -154,8 +155,8 @@ MonoBehaviour:
   m_Name: ConstraintAsset
   m_EditorClassIdentifier: 
   Constraints:
-  - not precondition obs-starts action1
-  - effect effects action1
+  - ignoreDidNotStart action1
+  - ignoreDidNotEnd action1
 --- !u!114 &114879984951233900
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -174,11 +175,11 @@ MonoBehaviour:
   m_Parent: {fileID: 11400000}
   m_Children: []
   m_Clips:
-  - m_Start: 1.4666666666666666
+  - m_Start: 1.6
     m_ClipIn: 0
     m_Asset: {fileID: 114695333138568540}
     m_UnderlyingAsset: {fileID: 114695333138568540}
-    m_Duration: 2
+    m_Duration: 1.8666666666666667
     m_TimeScale: 1
     m_ParentTrack: {fileID: 114879984951233900}
     m_EaseInDuration: 0

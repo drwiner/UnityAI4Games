@@ -16,9 +16,9 @@ public class SteeringPlayable : PlayableBehaviour
     private int _whichList;
     private bool _arrival, _departure, _isMaster;
     private ulong initialFrameId;
-    private int accumulated;
+ //   private int accumulated;
 
-    bool m_FirstFrameHappened;
+   // bool m_FirstFrameHappened;
 
     public void Initialize(GameObject gameObject, Vector3 lerpMoveFrom, Vector3 lerpMoveTo, bool departing, bool arriving, bool isMaster)
     {
@@ -51,11 +51,12 @@ public class SteeringPlayable : PlayableBehaviour
             _Controller.playingClip = true;
         }
 
+        // If it's a master clip, then we tell the steering controller that
         if (_isMaster && !_Controller.CheckMasterIsPlaying(_whichList))
         {
             if (Mathf.Abs(info.frameId - initialFrameId) < 5)
             {
-                //Debug.Log("master is playing");
+                Debug.Log("master is playing");
                 _Controller.InformMasterIsPlaying(_whichList, true);
                 //accumulated++;
                 //if (accumulated > 5)
@@ -91,7 +92,7 @@ public class SteeringPlayable : PlayableBehaviour
                 _Controller.Steer(_steerFrom, _steerTo, _departure, _arrival);
                 initialFrameId = info.frameId;
                 
-                accumulated = 0;
+                //accumulated = 0;
             }
             //else
             //{
@@ -103,7 +104,7 @@ public class SteeringPlayable : PlayableBehaviour
     {
         if (_isMaster)
         {
-            //Debug.Log("master not playing");
+            Debug.Log("master not playing");
             _Controller.InformMasterIsPlaying(_whichList, false);
         }
 

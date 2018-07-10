@@ -15,6 +15,7 @@ namespace TimelineClipsNamespace
         {
             _ccb = ccb;
             _target = target;
+            _oldTarget = ccb.FocusTransform;
         }
 
 
@@ -27,7 +28,7 @@ namespace TimelineClipsNamespace
         }
         public override void OnBehaviourPause(Playable playable, FrameData info)
         {
-            _oldTarget  = _ccb.FocusTransform;
+            _ccb.FocusTransform = _oldTarget;
         }
     }
 

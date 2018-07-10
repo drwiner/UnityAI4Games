@@ -42,22 +42,32 @@ namespace TimelineClipsNamespace
 
         public override void OnBehaviourPlay(Playable playable, FrameData info)
         {
+            if (Mathf.Abs((float)_newTime - (float)_pd.time) < 0.07)
+            {
+                return;
+            }
+
             _pd.Pause();
             if (_newTime > _pd.time)
             {
                 FastForward(_newTime);
             }
-            else
+            else 
             {
-                var UPC = GameObject.FindGameObjectWithTag("Problem").GetComponent<UnityProblemCompiler>();
-                Rewind(_newTime+.06f);
+
                 if (_newTime == 0)
                 {
+                    var UPC = GameObject.FindGameObjectWithTag("Problem").GetComponent<UnityProblemCompiler>();
                     UPC.SetInitialState();
+                    Rewind(0);
                 }
-               // UPC.SetInitialState();
+                else
+                {
+                    Rewind(_newTime + .06f);
+                }
+                // UPC.SetInitialState();
                 //Rewind(_newTime - 0.06f);
-               // FastForward(_newTime);
+                // FastForward(_newTime);
             }
 
             Debug.Log("setFabTime: " + _pd.time + " and: " + _pd.state);

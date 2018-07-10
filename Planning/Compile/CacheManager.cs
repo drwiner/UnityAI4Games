@@ -3,12 +3,13 @@ using BoltFreezer.Interfaces;
 using BoltFreezer.PlanTools;
 using BoltFreezer.Scheduling;
 using BoltFreezer.Utilities;
+using PlanningNamespace;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-namespace PlanningNamespace
+namespace CompilationNamespace
 {
     public class CacheManager : MonoBehaviour
     {
@@ -38,6 +39,11 @@ namespace PlanningNamespace
                 {
 
                     if (op.Height > 0)
+                    {
+                        Debug.Log(op.ToString());
+                    }
+
+                    if (op.Height > 1)
                     {
                         Debug.Log(op.ToString());
                     }
@@ -100,6 +106,8 @@ namespace PlanningNamespace
                 var op = BinarySerializer.DeSerializeObject<IOperator>(file);
                 GroundActionFactory.GroundActions.Add(op);
                 GroundActionFactory.GroundLibrary[op.ID] = op;
+                Debug.Log(op.ToString());
+                
                 if (op.ID > maxSeen)
                 {
                     maxSeen = op.ID;

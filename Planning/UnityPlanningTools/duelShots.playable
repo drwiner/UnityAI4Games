@@ -9,7 +9,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 337831424, guid: 6a10b2909283487f913b00d94cd3faf5, type: 3}
-  m_Name: LookXRaceY
+  m_Name: duelShots
   m_EditorClassIdentifier: 
   m_NextId: 0
   m_Tracks:
@@ -20,7 +20,23 @@ MonoBehaviour:
   m_EditorSettings:
     m_Framerate: 60
   m_DurationMode: 0
---- !u!114 &114016039737260218
+--- !u!114 &114300618873574492
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 372f6bb2f4dee2748afc882c784fb3f0, type: 3}
+  m_Name: ConstraintAsset
+  m_EditorClassIdentifier: 
+  Constraints:
+  - precond facing agent0 agent1 arrive0 arrive1
+  - precond at agent0 arrive0
+  - precond at agent1 arrive1
+  - effect bel-about-to-duel agent0 agent1
+--- !u!114 &114488896076840060
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
@@ -35,25 +51,24 @@ MonoBehaviour:
     scale: 3
     targetLocation: 
     targetOrientation: 0
-    hangle: 8
+    hangle: 4
     vangle: 1
   targetSchema:
     orient: 0
+    actionSegOfFocus: 0
     location: 
+    orientTowards: 
     ActionSegs:
-    - actionVarName: LookX
+    - actionVarName: Look1
       targetVarName: 
       actiontypeID: 0
-      startPercent: 0.73
+      startPercent: 0.79
       endPercent: 1
-    - actionVarName: Depart
-      targetVarName: 
-      actiontypeID: 0
-      startPercent: 0
-      endPercent: 0.4
-  camDirective: 2
-  Constraints: []
---- !u!114 &114081251381941930
+      screenxz: 4
+  camDirective: 4
+  Constraints:
+  - 2-shot arrive0 agent0
+--- !u!114 &114512863760809516
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
@@ -65,26 +80,13 @@ MonoBehaviour:
   m_Name: FabulaAsset
   m_EditorClassIdentifier: 
   Schema:
-    exposedName: aeddd04332017f749b1b49a8f44240e5
+    exposedName: 867f405fd971a834fbf2bf2247fb9738
     defaultValue: {fileID: 0}
   Constraints:
-  - terms agent origin choice
+  - terms agent0 arrive0 arrive1
   agentOrient: 0
   location: 
   schema: {fileID: 0}
---- !u!114 &114300618873574492
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 372f6bb2f4dee2748afc882c784fb3f0, type: 3}
-  m_Name: ConstraintAsset
-  m_EditorClassIdentifier: 
-  Constraints:
-  - precond not occupied choice
 --- !u!114 &114520960298040954
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -107,7 +109,7 @@ MonoBehaviour:
     m_ClipIn: 0
     m_Asset: {fileID: 114300618873574492}
     m_UnderlyingAsset: {fileID: 114300618873574492}
-    m_Duration: 4.516666666666667
+    m_Duration: 2.05
     m_TimeScale: 1
     m_ParentTrack: {fileID: 114520960298040954}
     m_EaseInDuration: 0
@@ -161,7 +163,7 @@ MonoBehaviour:
     m_PreExtrapolationTime: 0
     m_DisplayName: ConstraintAsset
     m_Version: 1
---- !u!114 &114587217055876448
+--- !u!114 &114591098725930470
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
@@ -173,41 +175,13 @@ MonoBehaviour:
   m_Name: FabulaAsset
   m_EditorClassIdentifier: 
   Schema:
-    exposedName: d0a8a0d60363db44baf618b80806d74d
+    exposedName: 06303eafefcd4ec4a84e560f21a60b51
     defaultValue: {fileID: 0}
   Constraints:
-  - terms agent origin option
+  - terms agent1 arrive1 arrive0
   agentOrient: 0
   location: 
   schema: {fileID: 0}
---- !u!114 &114646297354244646
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 41d87848e7f410f4795282cc0da46ada, type: 3}
-  m_Name: DiscourseAsset
-  m_EditorClassIdentifier: 
-  camSchema:
-    scale: 4
-    targetLocation: 
-    targetOrientation: 0
-    hangle: 6
-    vangle: 3
-  targetSchema:
-    orient: 0
-    location: 
-    ActionSegs:
-    - actionVarName: LookX
-      targetVarName: 
-      actiontypeID: 0
-      startPercent: 0.27
-      endPercent: 0.74
-  camDirective: 1
-  Constraints: []
 --- !u!114 &114744542817937288
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -223,24 +197,23 @@ MonoBehaviour:
     scale: 3
     targetLocation: 
     targetOrientation: 0
-    hangle: 8
+    hangle: 6
     vangle: 1
   targetSchema:
     orient: 0
+    actionSegOfFocus: 0
     location: 
+    orientTowards: 
     ActionSegs:
-    - actionVarName: Arrive
+    - actionVarName: Look0
       targetVarName: 
       actiontypeID: 0
-      startPercent: 0.45
+      startPercent: 0.79
       endPercent: 1
-    - actionVarName: LookX
-      targetVarName: 
-      actiontypeID: 0
-      startPercent: 0
-      endPercent: 0.27
-  camDirective: 2
-  Constraints: []
+      screenxz: 4
+  camDirective: 4
+  Constraints:
+  - 2-shot arrive1 agent1
 --- !u!114 &114879984951233900
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -259,84 +232,16 @@ MonoBehaviour:
   m_Parent: {fileID: 11400000}
   m_Children: []
   m_Clips:
-  - m_Start: 0.5333333333333333
+  - m_Start: 0
     m_ClipIn: 0
     m_Asset: {fileID: 114744542817937288}
     m_UnderlyingAsset: {fileID: 114744542817937288}
-    m_Duration: 1.0544875701268515
+    m_Duration: 1.133333333333333
     m_TimeScale: 1
     m_ParentTrack: {fileID: 114879984951233900}
     m_EaseInDuration: 0
     m_EaseOutDuration: 0
     m_BlendInDuration: -1
-    m_BlendOutDuration: 0.0044875701268514145
-    m_MixInCurve:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_MixOutCurve:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_BlendInCurveMode: 0
-    m_BlendOutCurveMode: 0
-    m_ExposedParameterNames: []
-    m_AnimationCurves: {fileID: 0}
-    m_Recordable: 0
-    m_PostExtrapolationMode: 0
-    m_PreExtrapolationMode: 0
-    m_PostExtrapolationTime: 0
-    m_PreExtrapolationTime: 0
-    m_DisplayName: Shot1
-    m_Version: 1
-  - m_Start: 1.5833333333333333
-    m_ClipIn: 0
-    m_Asset: {fileID: 114646297354244646}
-    m_UnderlyingAsset: {fileID: 114744542817937288}
-    m_Duration: 0.7166666666666666
-    m_TimeScale: 1
-    m_ParentTrack: {fileID: 114879984951233900}
-    m_EaseInDuration: 0
-    m_EaseOutDuration: 0
-    m_BlendInDuration: 0.0044875701268514145
-    m_BlendOutDuration: 0.004698085784911932
-    m_MixInCurve:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_MixOutCurve:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_BlendInCurveMode: 0
-    m_BlendOutCurveMode: 0
-    m_ExposedParameterNames: []
-    m_AnimationCurves: {fileID: 0}
-    m_Recordable: 0
-    m_PostExtrapolationMode: 0
-    m_PreExtrapolationMode: 0
-    m_PostExtrapolationTime: 0
-    m_PreExtrapolationTime: 0
-    m_DisplayName: Full
-    m_Version: 1
-  - m_Start: 2.295301914215088
-    m_ClipIn: 0
-    m_Asset: {fileID: 114016039737260218}
-    m_UnderlyingAsset: {fileID: 114744542817937288}
-    m_Duration: 1.1380314191182452
-    m_TimeScale: 1
-    m_ParentTrack: {fileID: 114879984951233900}
-    m_EaseInDuration: 0
-    m_EaseOutDuration: 0
-    m_BlendInDuration: 0.004698085784911932
     m_BlendOutDuration: -1
     m_MixInCurve:
       serializedVersion: 2
@@ -346,19 +251,7 @@ MonoBehaviour:
       m_RotationOrder: 4
     m_MixOutCurve:
       serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 2
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-      - serializedVersion: 2
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
+      m_Curve: []
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
@@ -371,7 +264,41 @@ MonoBehaviour:
     m_PreExtrapolationMode: 0
     m_PostExtrapolationTime: 0
     m_PreExtrapolationTime: 0
-    m_DisplayName: Shot2
+    m_DisplayName: Oshoulder1
+    m_Version: 1
+  - m_Start: 1.133333333333333
+    m_ClipIn: 0
+    m_Asset: {fileID: 114488896076840060}
+    m_UnderlyingAsset: {fileID: 114744542817937288}
+    m_Duration: 0.9166666666666667
+    m_TimeScale: 1
+    m_ParentTrack: {fileID: 114879984951233900}
+    m_EaseInDuration: 0
+    m_EaseOutDuration: 0
+    m_BlendInDuration: -1
+    m_BlendOutDuration: -1
+    m_MixInCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_MixOutCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_BlendInCurveMode: 0
+    m_BlendOutCurveMode: 0
+    m_ExposedParameterNames: []
+    m_AnimationCurves: {fileID: 0}
+    m_Recordable: 0
+    m_PostExtrapolationMode: 0
+    m_PreExtrapolationMode: 0
+    m_PostExtrapolationTime: 0
+    m_PreExtrapolationTime: 0
+    m_DisplayName: Oshoulder2
     m_Version: 1
 --- !u!114 &114944695894505090
 MonoBehaviour:
@@ -393,101 +320,9 @@ MonoBehaviour:
   m_Clips:
   - m_Start: 0
     m_ClipIn: 0
-    m_Asset: {fileID: 114971089383468478}
-    m_UnderlyingAsset: {fileID: 114971089383468478}
-    m_Duration: 1.1833333333333333
-    m_TimeScale: 1
-    m_ParentTrack: {fileID: 114944695894505090}
-    m_EaseInDuration: 0
-    m_EaseOutDuration: 0
-    m_BlendInDuration: -1
-    m_BlendOutDuration: 0.0020133972167970526
-    m_MixInCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 2
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-      - serializedVersion: 2
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_MixOutCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 2
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-      - serializedVersion: 2
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_BlendInCurveMode: 0
-    m_BlendOutCurveMode: 0
-    m_ExposedParameterNames: []
-    m_AnimationCurves: {fileID: 0}
-    m_Recordable: 0
-    m_PostExtrapolationMode: 0
-    m_PreExtrapolationMode: 0
-    m_PostExtrapolationTime: 0
-    m_PreExtrapolationTime: 0
-    m_DisplayName: Arrive
-    m_Version: 1
-  - m_Start: 1.1813199361165363
-    m_ClipIn: 0
-    m_Asset: {fileID: 114587217055876448}
-    m_UnderlyingAsset: {fileID: 114971089383468478}
-    m_Duration: 1.5166666666666668
-    m_TimeScale: 1
-    m_ParentTrack: {fileID: 114944695894505090}
-    m_EaseInDuration: 0
-    m_EaseOutDuration: 0
-    m_BlendInDuration: 0.0020133972167970526
-    m_BlendOutDuration: -1
-    m_MixInCurve:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_MixOutCurve:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_BlendInCurveMode: 0
-    m_BlendOutCurveMode: 0
-    m_ExposedParameterNames: []
-    m_AnimationCurves: {fileID: 0}
-    m_Recordable: 0
-    m_PostExtrapolationMode: 0
-    m_PreExtrapolationMode: 0
-    m_PostExtrapolationTime: 0
-    m_PreExtrapolationTime: 0
-    m_DisplayName: LookX
-    m_Version: 1
-  - m_Start: 2.697986602783203
-    m_ClipIn: 0
-    m_Asset: {fileID: 114081251381941930}
-    m_UnderlyingAsset: {fileID: 114971089383468478}
-    m_Duration: 1.8186800638834635
+    m_Asset: {fileID: 114512863760809516}
+    m_UnderlyingAsset: {fileID: 114512863760809516}
+    m_Duration: 1.133333333333333
     m_TimeScale: 1
     m_ParentTrack: {fileID: 114944695894505090}
     m_EaseInDuration: 0
@@ -502,19 +337,7 @@ MonoBehaviour:
       m_RotationOrder: 4
     m_MixOutCurve:
       serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 2
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-      - serializedVersion: 2
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
+      m_Curve: []
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
@@ -527,26 +350,39 @@ MonoBehaviour:
     m_PreExtrapolationMode: 0
     m_PostExtrapolationTime: 0
     m_PreExtrapolationTime: 0
-    m_DisplayName: Depart
+    m_DisplayName: Look0
     m_Version: 1
---- !u!114 &114971089383468478
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 24b75fbfaa2b710428733393da6691ed, type: 3}
-  m_Name: FabulaAsset
-  m_EditorClassIdentifier: 
-  Schema:
-    exposedName: 4393dde394c7ca34b8ce19507daf642c
-    defaultValue: {fileID: 0}
-  Constraints:
-  - term 0 agent
-  - term 2 origin
-  - effect at agent origin
-  agentOrient: 0
-  location: 
-  schema: {fileID: 0}
+  - m_Start: 1.133333333333333
+    m_ClipIn: 0
+    m_Asset: {fileID: 114591098725930470}
+    m_UnderlyingAsset: {fileID: 114512863760809516}
+    m_Duration: 0.916666666666667
+    m_TimeScale: 1
+    m_ParentTrack: {fileID: 114944695894505090}
+    m_EaseInDuration: 0
+    m_EaseOutDuration: 0
+    m_BlendInDuration: -1
+    m_BlendOutDuration: -1
+    m_MixInCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_MixOutCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_BlendInCurveMode: 0
+    m_BlendOutCurveMode: 0
+    m_ExposedParameterNames: []
+    m_AnimationCurves: {fileID: 0}
+    m_Recordable: 0
+    m_PostExtrapolationMode: 0
+    m_PreExtrapolationMode: 0
+    m_PostExtrapolationTime: 0
+    m_PreExtrapolationTime: 0
+    m_DisplayName: Look1
+    m_Version: 1

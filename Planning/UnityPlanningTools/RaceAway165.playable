@@ -61,6 +61,7 @@ MonoBehaviour:
     ActionSegs:
     - actionVarName: Action1
       targetVarName: 
+      actiontypeID: 0
       startPercent: 0
       endPercent: 0
   camDirective: 3

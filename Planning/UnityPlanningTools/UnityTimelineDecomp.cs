@@ -15,6 +15,8 @@ using BoltFreezer.DecompTools;
 using BoltFreezer.Utilities;
 using BoltFreezer.Camera;
 using GraphNamespace;
+using CompilationNamespace;
+using BoltFreezer.Camera.CameraEnums;
 
 namespace PlanningNamespace {
 
@@ -29,6 +31,8 @@ namespace PlanningNamespace {
 
         public List<IPredicate> Preconditions;
         public List<IPredicate> Effects;
+        public List<string> ignoreDidNotStart = new List<string>();
+        public List<string> ignoreDidNotEnd = new List<string>();
 
         // used to assemble clips from timeline
         private PlayableDirector playableDirector;
@@ -66,7 +70,7 @@ namespace PlanningNamespace {
         private List<CausalLink<IPlanStep>> links;
         private List<CausalLink<CamPlanStep>> dlinks;
 
-        private TimelineDecomposition PartialDecomp;
+        public TimelineDecomposition PartialDecomp;
         // these are ground decompositions that can be used to create composite steps.
         [NonSerialized]
         public List<TimelineDecomposition> GroundDecomps;
@@ -75,6 +79,7 @@ namespace PlanningNamespace {
 
         // triggers for update events
         public bool readClips = false;
+        public bool setCamsAndLocs = false;
         public bool assembleDecomp = false;
         public bool filterCndts = false;
         public bool reset = false;
@@ -114,6 +119,12 @@ namespace PlanningNamespace {
                     UGAF.PreparePlanner(true);
                 }
                 Read();
+            }
+
+            if (setCamsAndLocs)
+            {
+                setCamsAndLocs = false;
+                DiscourseDecompositionHelper.SetCamsAndLocations(CameraHost, LocationHost);
             }
 
             if (assembleDecomp)
@@ -217,13 +228,13 @@ namespace PlanningNamespace {
                 if (i > 0)
                 {
                     var lastItemEndTime = last.start + last.duration;
-                    if (fabClip.start - lastItemEndTime < 0.3)
+                    if (fabClip.start - lastItemEndTime <= 0.06)
                     {
                         // these are cntg
                         var newCntg = new Tuple<IPlanStep, IPlanStep>(fabClipStepMap[last], planStep);
                         cntgs.Add(newCntg);
                     }
-                    else if(fabClip.start - lastItemEndTime >= 0.3)
+                    else if(fabClip.start - lastItemEndTime > 0.6)
                     {
                         // what's the maximum amount of space that can go into here? This is calculated by looking at specific action.
                         var ordering = new Tuple<IPlanStep, IPlanStep>(fabClipStepMap[last], planStep);
@@ -269,7 +280,10 @@ namespace PlanningNamespace {
                 
                 dlast = discClip;
             }
-            
+
+            ignoreDidNotStart = new List<string>();
+            ignoreDidNotEnd = new List<string>();
+
             // iterate through global constraints
             foreach (var constraintClipSchema in globalConstraints)
             {
@@ -357,18 +371,50 @@ namespace PlanningNamespace {
 
                     if (constraintParts[0].Equals("effect") || constraintParts[0].Equals("eff"))
                     {
-                        // indicates an effect
-                        var predicate = ProcessPredicateString(constraintParts);
-                        //preconditions
-                        Effects.Add(predicate);
+                        if (constraintParts[1].Equals("effects"))
+                        {
+
+                        }
+                        else
+                        {
+                            // indicates an effect
+                            var predicate = ProcessPredicateString(constraintParts);
+                            //preconditions
+                            Effects.Add(predicate);
+                        }
 
                     }
+
+                    if (constraintParts[0].Equals("ignoreDidNotStart"))
+                    {
+                        ignoreDidNotStart.Add(constraintParts[1]);
+                    }
+                    if (constraintParts[0].Equals("ignoreDidNotEnd"))
+                    {
+                        ignoreDidNotEnd.Add(constraintParts[1]);
+                    }
+                       
                 }
             }
             /// next we have to filter the schemas based on actual candidates. for steps that's groundActions, and for cams that's gameObjects with the camAttributeStruct
             /// then, we filter based on global constraints
         }
 
+        public TimelineDecomposition NonGroundTimelineDecomposition()
+        {
+            var root = new Operator(new Predicate(gameObject.name, Terms, true), Preconditions, Effects) as IOperator;
+
+            PartialDecomp = new TimelineDecomposition(root, new List<IPredicate>(), cntgs, dcntgs, stepConstraints, dstepConstraints, SubSteps, DSubSteps, orderings, dorderings, links, dlinks, fabVarStepMap);
+
+            // Instantiate Nonequality constraints
+            PartialDecomp.NonEqualities = new List<List<ITerm>>();
+            foreach (var nonequality in NonEqualities)
+            {
+                PartialDecomp.NonEqualities.Add(new List<ITerm>() { Terms[nonequality.first], Terms[nonequality.second] });
+            }
+
+            return PartialDecomp;
+        }
 
         public void Filter()
         {
@@ -382,8 +428,6 @@ namespace PlanningNamespace {
             {
                 PartialDecomp.NonEqualities.Add(new List<ITerm>() { Terms[nonequality.first], Terms[nonequality.second] });
             }
-
-            TimelineDecompositionHelper.SetCamsAndLocations(CameraHost, LocationHost);
 
             GroundDecomps = TimelineDecompositionHelper.Compose(0, PartialDecomp);
             NumGroundDecomps = GroundDecomps.Count();
@@ -546,20 +590,20 @@ namespace PlanningNamespace {
                 if (instruction.Equals("term"))
                 {
                     var argPos = Int32.Parse(constraintParts[1]);
-                    if (argPos >= terms.Count - 1)
-                    {
-                        // if the arg position is not the next item in term list, then 
-                        while (argPos != terms.Count)
-                        {
-                            // add placeholder terms
-                            terms.Add(new Term(terms.Count.ToString()) as ITerm);
-                        }
-                        terms.Add(new Term(constraintParts[2], true) as ITerm);
-                    }
-                    else if(argPos < terms.Count)
-                    {
-                        terms.Insert(argPos, new Term(constraintParts[2], true) as ITerm);
-                    }
+                    //if (argPos >= terms.Count - 1)
+                    //{
+                    //    // if the arg position is not the next item in term list, then 
+                    //    while (argPos != terms.Count)
+                    //    {
+                    //        // add placeholder terms
+                    //        terms.Add(new Term(terms.Count.ToString()) as ITerm);
+                    //    }
+                    //    terms.Add(new Term(constraintParts[2], true) as ITerm);
+                    //}
+                    //else if(argPos < terms.Count)
+                    //{
+                     terms[argPos] =  new Term(constraintParts[2]) as ITerm;
+                    //}
 
                 }
                 if (instruction.Equals("precond") || instruction.Equals("has-precond") || instruction.Equals("precondition"))
@@ -590,6 +634,20 @@ namespace PlanningNamespace {
                     // TODO: assemble list of negative constraints and propagate to filtering
                 }
 
+                //if (instruction.Equals("set"))
+                //{
+                //    // set who?
+                //    var whodat = constraintParts[1];
+
+                //    // do what?
+                //    var dowat = constraintParts[2];
+
+                //    if (dowat.Equals("idle"))
+                //    {
+                //        // how do we represent 
+                //    }
+                //}
+
             }
 
             var root = new Operator(new Predicate(schemaName,terms,true), preconditions, effects);
@@ -604,13 +662,10 @@ namespace PlanningNamespace {
              * Output: A camera plan step (type CamPlanStep) representing a single durative camera action/shot
              * 
              * CamPlanStep references 
-             *      A specific Camera GameObject (cloned)
-             *      A specific target transform to focus on
-             *      A set of action segments which can be used to specify duration
+             *      Camera Feature Vector
+             *      A target location and orientation to reference as the line of action
+             *      A set of action segments
              */
-
-            // Now doing this in Read()
-            //UpdateActionSegmentsWithPercentages(discClip);
 
             // The Terms of the camera plan step are just its scale, hangle, vangle, and the location of the target.
             var termList = new List<ITerm>()
@@ -621,45 +676,84 @@ namespace PlanningNamespace {
                 new Term(discClip.asset.camSchema.targetLocation.ToString(), true) as ITerm
             };
 
-            // include here, other constraints that can be tacked on, like horizontal and vertical damping, amount of lead time, etc. Can we just display the entire cinemachine camera body?
+            // Create the CameraPlanStep
+            CamPlanStep cps;
+            var root = new Operator(new Predicate("", termList, true), new List<IPredicate>(), new List<IPredicate>());
+            cps = new CamPlanStep(root as IOperator);
 
-            // Since there's a list of action segments, specifying just one is not good.
-            //    new Term(actionSeg.actionVarName.ToString(), true) as ITerm,
-            //    new Term(actionSeg.startPercent.ToString(), true) as ITerm,
-            //    new Term(actionSeg.endPercent.ToString(), true) as ITerm
-            //};
+            ////////////////////////////////////////
+            // Assign updated target Schemata
+            ////////////////////////////////////////
+
+            cps.TargetDetails = discClip.asset.targetSchema;
+
+            ////////////////////
+            // Assign CamSchema, will be used to filter valid camera objects (CamAttributesStruct)
+            ////////////////////
+
+            cps.CamDetails = discClip.asset.camSchema;
+
+            ////////////////////
+            // Assign directive
+            ////////////////////
+
+            cps.directive = discClip.asset.camDirective;
+            if (cps.directive == BoltFreezer.Camera.CameraEnums.CamDirective.None)
+            {
+                cps.directive = BoltFreezer.Camera.CameraEnums.CamDirective.Pan;
+            }
+
+            // include here, other constraints that can be tacked on, like horizontal and vertical damping, amount of lead time, etc. Can we just display the entire cinemachine camera body?
 
             foreach (var constraint in discClip.asset.Constraints)
             {
                 var constraintParts = constraint.Split(' ');
-                // depreciated - specific object targets would be specified in target details (CamTargetSchema)
-                //if (constraintParts[0].Equals("target"))
-                //{
-                //    termList.Add(new Term(constraintParts[1], true) as ITerm);
-                //}
 
                 // special constraints for different kinds of targets? Here, would create a new target and perhaps merge 2 targets?
                 if (constraintParts[0].Equals("2-shot"))
                 {
-                    // create new target here? 
+                    // "2-shot orientTowards agentOfFocus"
+                    // "2-shot locat0 locat1"
+
+                    var orientTowards = constraintParts[1];
+
+                    if (!this.TermNames.Contains(orientTowards))
+                    {
+                        throw new System.Exception("constraint terms must be labeled variables");
+                    }
+
+                    var agentOfFocus = constraintParts[2];
+
+                    if (!this.TermNames.Contains(agentOfFocus))
+                    {
+                        throw new System.Exception("constraint terms must be labeled variables");
+                    }
+
+                    /////////////////////////////
+                    //// Orient Towards (var) ///
+                    /////////////////////////////
+
+                    // orientTowards, setting this variable so that orient is calculated with respect to the direction towards this element
+                    cps.TargetDetails.orientTowards = orientTowards;
+
+                    /////////////////////////////
+                    //// Target Var Name (var) //
+                    /////////////////////////////
+
+                    // agentOfFocus is the agent, at the orientTowards location, that the camera should focus on.
+                    var targetActionSeg = cps.TargetDetails.ActionSegs[cps.TargetDetails.actionSegOfFocus];
+                    targetActionSeg.targetVarName = agentOfFocus;
+
+                    /////////////////////////////
+                    //// Group Target Directive /
+                    /////////////////////////////
+
+                    // It ought to be set to this already; but in case it is not...
+                    cps.directive = CamDirective.GroupAim;
                 }
-                // TODO: do something with them. so far, unneeded...
             }
 
-            // Create the CameraPlanStep
-            CamPlanStep ps;
-            var root = new Operator(new Predicate("", termList, true), new List<IPredicate>(), new List<IPredicate>());
-            ps = new CamPlanStep(root as IOperator);
-
-            // Assign updated target Schemata
-            ps.TargetDetails = discClip.asset.targetSchema;
-            
-            // Assign CamSchema, will be used to filter valid camera objects (CamAttributesStruct)
-            ps.CamDetails = discClip.asset.camSchema;
-
-            ps.directive = discClip.asset.camDirective;
-
-            return ps;
+            return cps;
             
         }
 

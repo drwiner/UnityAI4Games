@@ -31,6 +31,8 @@ namespace PlanningNamespace
 
         public Dictionary<int, int> mergeManager = new Dictionary<int, int>();
 
+        public bool resetLensKit = false;
+        public bool decachePlan = false;
         public bool reInitialize = false;
         public bool assembleClips = false;
         public bool assembleTimelines = false;
@@ -52,6 +54,20 @@ namespace PlanningNamespace
                 discourseDirector.playableAsset = null;
                 discoursePlanExecutor = new DiscoursePlanExecutor(discourseDirector);
                 DiscourseTimelineHost.GetComponent<UnityPlanExecutor>().planExecutor = discoursePlanExecutor;
+            }
+
+            if (resetLensKit)
+            {
+                resetLensKit = false;
+                var CH = GameObject.FindGameObjectWithTag("CameraHost").GetComponent<CamGen>();
+                CH.Initiate();
+            }
+
+            if (decachePlan)
+            {
+                decachePlan = false;
+                var PI = GameObject.FindGameObjectWithTag("Planner").GetComponent<UnityPlanningInterface>();
+                PI.decachePlan = true;
             }
 
             if (assembleClips)
@@ -85,6 +101,15 @@ namespace PlanningNamespace
                 }
                 discoursePlanExecutor.Play();
             }
+
+            if (Input.GetKeyDown("space"))
+            {
+                discourseDirector.time = 0;
+                discourseDirector.Stop();
+                discourseDirector.Evaluate();
+                discourseDirector.Play();
+            }
+               
         }
 
         public void AssembleClips()

@@ -4,6 +4,7 @@ using BoltFreezer.Interfaces;
 using BoltFreezer.PlanSpace;
 using BoltFreezer.PlanTools;
 using BoltFreezer.Scheduling;
+using CompilationNamespace;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,7 +28,7 @@ namespace PlanningNamespace
         public bool getPlan;
         public bool decachePlan = false;
         public bool justCacheMapsAndEffort = false;
-
+        public int heightMax = 1;
         public float cutoffTime = 10000;
 
         public List<string> PlanSteps;
@@ -154,7 +155,7 @@ namespace PlanningNamespace
                 UGAF.PreparePlanner(true);
                 GroundActionFactory.GroundActions = new HashSet<IOperator>(GroundActionFactory.GroundActions).ToList();
                // AddObservedNegativeConditions(UPC);
-                UnityGroundActionFactory.CreateSteps(UPC, UGAF.DecompositionSchemata);
+                UGAF.CreateSteps(UPC, heightMax);
 
                 cacheManager.CacheIt();
             }
