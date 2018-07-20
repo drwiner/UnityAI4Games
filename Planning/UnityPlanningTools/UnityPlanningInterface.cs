@@ -1,4 +1,5 @@
 ﻿using BoltFreezer.CacheTools;
+using BoltFreezer.Camera;
 using BoltFreezer.FileIO;
 using BoltFreezer.Interfaces;
 using BoltFreezer.PlanSpace;
@@ -7,6 +8,7 @@ using BoltFreezer.Scheduling;
 using CompilationNamespace;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 
@@ -143,7 +145,7 @@ namespace PlanningNamespace
                 CacheMaps.CacheLinks(GroundActionFactory.GroundActions);
                 CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, UPC.goalPredicateList);
                 CacheMaps.CacheAddReuseHeuristic(new State(UPC.initialPredicateList) as IState);
-                UnityGroundActionFactory.PrimaryEffectHack(new State(UPC.initialPredicateList) as IState);
+                CacheMaps.PrimaryEffectHack(new State(UPC.initialPredicateList) as IState);
 
                 cacheManager.justCacheMapsAndEffort = true;
                 cacheManager.CacheIt();
@@ -172,6 +174,9 @@ namespace PlanningNamespace
             //var solution = Run(initPlan, new BFS(), new Nada(new ZeroHeuristic()), 20000);
             if (solution != null)
             {
+                var savePath = @"D:\documents\frostbow\" + @"Results\" + "UnityBlocksWorld" + @"\Solutions\";
+                Directory.CreateDirectory(savePath);
+
                 //Debug.Log(solution.ToStringOrdered());
                 PlanSteps = new List<string>();
                 Plan = new List<IPlanStep>();
@@ -179,9 +184,22 @@ namespace PlanningNamespace
                 MergeManager = planSchedule.MM.ToRootMap();
                 foreach (var step in solution.Orderings.TopoSort(solution.InitialStep))
                 {
-                    Debug.Log(step);
-                    PlanSteps.Add(step.ToString());
+                    var cps = step as CamPlanStep;
+                    if (cps != null)
+                    {
+                        foreach (var seg in cps.TargetDetails.ActionSegs)
+                        {
+                            if (MergeManager.ContainsKey(seg.ActionID))
+                            {
+                                seg.ActionID = MergeManager[seg.ActionID];
+                            }
+                        }
+                    }
                     Plan.Add(step);
+                    PlanSteps.Add(step.ToString());
+
+                    BinarySerializer.SerializeObject(savePath + "PlanSteps", Plan);
+                    Debug.Log(step);
                 }
             }
             else

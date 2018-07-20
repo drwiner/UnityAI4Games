@@ -31,6 +31,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 372f6bb2f4dee2748afc882c784fb3f0, type: 3}
   m_Name: ConstraintAsset
   m_EditorClassIdentifier: 
+  editingConstraints: 000000000100000002000000
   Constraints:
   - precond facing agent0 agent1 arrive0 arrive1
   - precond at agent0 arrive0
@@ -53,21 +54,22 @@ MonoBehaviour:
     targetOrientation: 0
     hangle: 4
     vangle: 1
+    distance: 0
+    height: 0
   targetSchema:
     orient: 0
     actionSegOfFocus: 0
-    location: 
-    orientTowards: 
+    location: arrive1
+    orientTowards: arrive0
     ActionSegs:
     - actionVarName: Look1
-      targetVarName: 
+      targetVarName: agent1 agent0
       actiontypeID: 0
-      startPercent: 0.79
+      startPercent: 0
       endPercent: 1
-      screenxz: 4
-  camDirective: 4
-  Constraints:
-  - 2-shot arrive0 agent0
+      screenxy: 4
+      directive: 4
+  Constraints: []
 --- !u!114 &114512863760809516
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -199,21 +201,22 @@ MonoBehaviour:
     targetOrientation: 0
     hangle: 6
     vangle: 1
+    distance: 0
+    height: 0
   targetSchema:
     orient: 0
     actionSegOfFocus: 0
-    location: 
-    orientTowards: 
+    location: arrive0
+    orientTowards: arrive1
     ActionSegs:
     - actionVarName: Look0
-      targetVarName: 
+      targetVarName: agent0 agent1
       actiontypeID: 0
-      startPercent: 0.79
+      startPercent: 0
       endPercent: 1
-      screenxz: 4
-  camDirective: 4
-  Constraints:
-  - 2-shot arrive1 agent1
+      screenxy: 4
+      directive: 4
+  Constraints: []
 --- !u!114 &114879984951233900
 MonoBehaviour:
   m_ObjectHideFlags: 1

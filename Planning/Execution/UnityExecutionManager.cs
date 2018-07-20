@@ -31,7 +31,6 @@ namespace PlanningNamespace
 
         public Dictionary<int, int> mergeManager = new Dictionary<int, int>();
 
-        public bool resetLensKit = false;
         public bool decachePlan = false;
         public bool reInitialize = false;
         public bool assembleClips = false;
@@ -56,12 +55,6 @@ namespace PlanningNamespace
                 DiscourseTimelineHost.GetComponent<UnityPlanExecutor>().planExecutor = discoursePlanExecutor;
             }
 
-            if (resetLensKit)
-            {
-                resetLensKit = false;
-                var CH = GameObject.FindGameObjectWithTag("CameraHost").GetComponent<CamGen>();
-                CH.Initiate();
-            }
 
             if (decachePlan)
             {

@@ -19,15 +19,15 @@ namespace PlanningNamespace
     {
 
         public bool compilePrimitiveSteps = false;
-        public bool compileCompositeSteps = false;
-        public bool regenerateInitialPlanWithComposite = false;
-        public bool checkEffects = false;
+        //public bool compileCompositeSteps = false;
+        //public bool regenerateInitialPlanWithComposite = false;
+        //public bool checkEffects = false;
 
         public int PrimitiveSteps;
         public List<UnityTimelineDecomp> DecompositionSchemata;
-        public int CompositeSteps;
-        private List<IOperator> PrimitiveOps;
-        private List<IOperator> CompositeOps;
+       // public int CompositeSteps;
+        //private List<IOperator> PrimitiveOps;
+        //private List<IOperator> CompositeOps;
 
         private IPlan initialPlan;
 
@@ -44,75 +44,74 @@ namespace PlanningNamespace
             {
                 compilePrimitiveSteps = false;
                 initialPlan = PreparePlanner(true);
-                PrimitiveOps = GroundActionFactory.GroundActions;
-                PrimitiveSteps = PrimitiveOps.Count;
-                CompositeSteps = 0;
+                PrimitiveSteps = GroundActionFactory.GroundActions.Count;
+                //CompositeSteps = 0;
             }
 
-            if (compileCompositeSteps)
-            {
-                compileCompositeSteps = false;
-                CreateSteps(GameObject.FindGameObjectWithTag("ProblemHost").GetComponent<UnityProblemCompiler>(), 1);
-            }
+            //if (compileCompositeSteps)
+            //{
+            //    compileCompositeSteps = false;
+            //    CreateSteps(GameObject.FindGameObjectWithTag("ProblemHost").GetComponent<UnityProblemCompiler>(), 1);
+            //}
 
-            if (checkEffects)
-            {
-                checkEffects = false;
-                foreach(var compstep in CompositeOps)
-                {
-                    foreach(var effect in compstep.Effects)
-                    {
-                        if (effect.Name != "obs") // && effect.Name != "obs-starts")
-                        {
-                            continue;
-                        }
-                        Debug.Log(effect.ToString());
-                    }
-                }
+            //if (checkEffects)
+            //{
+            //    checkEffects = false;
+            //    foreach(var compstep in CompositeOps)
+            //    {
+            //        foreach(var effect in compstep.Effects)
+            //        {
+            //            if (effect.Name != "obs") // && effect.Name != "obs-starts")
+            //            {
+            //                continue;
+            //            }
+            //            Debug.Log(effect.ToString());
+            //        }
+            //    }
                 // do we have what we need?
-            }
+            //}
 
-            if (regenerateInitialPlanWithComposite)
-            {
-                regenerateInitialPlanWithComposite = false;
+            //if (regenerateInitialPlanWithComposite)
+            //{
+            //    regenerateInitialPlanWithComposite = false;
 
-                Parser.path = "/";
-                var domainOperatorComponent = GameObject.FindGameObjectWithTag("ActionHost").GetComponent<DomainOperators>();
-                domainOperatorComponent.Reset();
-                var problem = CreateProblem(domainOperatorComponent.DomainOps);
-                var domain = CreateDomain(domainOperatorComponent);
-                var PF = new ProblemFreezer("Unity", "", domain, problem);
-                var initPlan = PlannerScheduler.CreateInitialPlan(PF);
-                CacheMaps.CacheAddReuseHeuristic(initPlan.Initial);
-                PrimaryEffectHack(InitialPlan.Initial);
-            }
+            //    Parser.path = "/";
+            //    var domainOperatorComponent = GameObject.FindGameObjectWithTag("ActionHost").GetComponent<DomainOperators>();
+            //    domainOperatorComponent.Reset();
+            //    var problem = CreateProblem(domainOperatorComponent.DomainOps);
+            //    var domain = CreateDomain(domainOperatorComponent);
+            //    var PF = new ProblemFreezer("Unity", "", domain, problem);
+            //    var initPlan = PlannerScheduler.CreateInitialPlan(PF);
+            //    CacheMaps.CacheAddReuseHeuristic(initPlan.Initial);
+            //    PrimaryEffectHack(InitialPlan.Initial);
+            //}
 
         }
 
-        public void CompileCompositeSteps(int heightMax)
-        {
+        //public void CompileCompositeSteps(int heightMax)
+        //{
             
 
-            CompositeSteps = 0;
-            CompositeOps = new List<IOperator>();
-            foreach (var unitydecomp in DecompositionSchemata)
-            {
-                if (unitydecomp.NumGroundDecomps == 0)
-                {
-                    unitydecomp.Read();
-                    unitydecomp.Assemble();
-                }
-            }
-            // Now, all composite steps with height 1 are created, and the TimelineDecompositionHelper is loaded.\
-         //   for (int )
-            var compositeSteps = GroundDecompositionsToCompositeSteps(DecompositionSchemata);
-            foreach (var comp in compositeSteps)
-            {
-                CompositeOps.Add(comp as IOperator);
-                CompositeSteps++;
-            }
-            AddCompositeStepsToGroundActionFactory(compositeSteps);
-        }
+        //    CompositeSteps = 0;
+        //    CompositeOps = new List<IOperator>();
+        //    foreach (var unitydecomp in DecompositionSchemata)
+        //    {
+        //        if (unitydecomp.NumGroundDecomps == 0)
+        //        {
+        //            unitydecomp.Read();
+        //            unitydecomp.Assemble();
+        //        }
+        //    }
+        //    // Now, all composite steps with height 1 are created, and the TimelineDecompositionHelper is loaded.\
+        // //   for (int )
+        //    var compositeSteps = GroundDecompositionsToCompositeSteps(DecompositionSchemata);
+        //    foreach (var comp in compositeSteps)
+        //    {
+        //        CompositeOps.Add(comp as IOperator);
+        //        CompositeSteps++;
+        //    }
+        //    AddCompositeStepsToGroundActionFactory(compositeSteps);
+        //}
 
 
         public void CreateSteps(UnityProblemCompiler UPC, int heightMax)
@@ -166,80 +165,80 @@ namespace PlanningNamespace
             CacheMaps.Reset();
             CacheMaps.CacheLinks(GroundActionFactory.GroundActions);
             CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, UPC.goalPredicateList);
-
-            PrimaryEffectHack(new State(UPC.initialPredicateList) as IState);
+            
+            CacheMaps.PrimaryEffectHack(new State(UPC.initialPredicateList) as IState);
 
             //  var compositeSteps = GroundDecompositionsToCompositeSteps(DecompositionSchemata);
             // AddCompositeStepsToGroundActionFactory(UPC.initialPredicateList, UPC.goalPredicateList, compositeSteps);
         }
 
-        public static void AddCompositeStepsToGroundActionFactory(List<IPredicate> Initial, List<IPredicate> Goal, List<CompositeSchedule> compositeSteps)
-        {
-            var originalOps = GroundActionFactory.GroundActions;
-            //CacheMaps.CacheLinks(originalOps);
-            var IOpList = new List<IOperator>();
-            foreach (var compstep in compositeSteps)
-            {
-                var asIOp = compstep as IOperator;
-                IOpList.Add(asIOp);
-                GroundActionFactory.InsertOperator(asIOp);
-            }
+        //public static void AddCompositeStepsToGroundActionFactory(List<IPredicate> Initial, List<IPredicate> Goal, List<CompositeSchedule> compositeSteps)
+        //{
+        //    var originalOps = GroundActionFactory.GroundActions;
+        //    //CacheMaps.CacheLinks(originalOps);
+        //    var IOpList = new List<IOperator>();
+        //    foreach (var compstep in compositeSteps)
+        //    {
+        //        var asIOp = compstep as IOperator;
+        //        IOpList.Add(asIOp);
+        //        GroundActionFactory.InsertOperator(asIOp);
+        //    }
 
-            // Update Heuristic value for primary effects.
-            PrimaryEffectHack(new State(Initial) as IState);
+        //    // Update Heuristic value for primary effects.
+        //    CacheMaps.PrimaryEffectHack(new State(Initial) as IState);
 
-            // Amonst themselves
-            CacheMaps.CacheLinks(IOpList);
+        //    // Amonst themselves
+        //    CacheMaps.CacheLinks(IOpList);
 
-            // as consequents to the originals
-            CacheMaps.CacheLinks(originalOps, IOpList);
+        //    // as consequents to the originals
+        //    CacheMaps.CacheLinks(originalOps, IOpList);
 
-            // as antecedants to the originals
-            CacheMaps.CacheLinks(IOpList, originalOps);
+        //    // as antecedants to the originals
+        //    CacheMaps.CacheLinks(IOpList, originalOps);
 
-            // as antecedants to goal conditions
-            CacheMaps.CacheGoalLinks(originalOps, Goal);
-            CacheMaps.CacheGoalLinks(IOpList, Goal);
-        }
+        //    // as antecedants to goal conditions
+        //    CacheMaps.CacheGoalLinks(originalOps, Goal);
+        //    CacheMaps.CacheGoalLinks(IOpList, Goal);
+        //}
 
-        public void AddCompositeStepsToGroundActionFactory(List<CompositeSchedule> compositeSteps)
-        {
-            var goalConditions = InitialPlan.GoalStep.Preconditions;
-            var originalOps = GroundActionFactory.GroundActions;
+        //public void AddCompositeStepsToGroundActionFactory(List<CompositeSchedule> compositeSteps)
+        //{
+        //    var goalConditions = InitialPlan.GoalStep.Preconditions;
+        //    var originalOps = GroundActionFactory.GroundActions;
 
-            var IOpList = new List<IOperator>();
-            foreach (var compstep in compositeSteps)
-            {
-                var asIOp = compstep as IOperator;
-                IOpList.Add(asIOp);
-                GroundActionFactory.InsertOperator(asIOp);
-            }
+        //    var IOpList = new List<IOperator>();
+        //    foreach (var compstep in compositeSteps)
+        //    {
+        //        var asIOp = compstep as IOperator;
+        //        IOpList.Add(asIOp);
+        //        GroundActionFactory.InsertOperator(asIOp);
+        //    }
 
-            // Update Heuristic value for primary effects.
-            PrimaryEffectHack(InitialPlan.Initial);
+        //    // Update Heuristic value for primary effects.
+        //    PrimaryEffectHack(InitialPlan.Initial);
 
-            // Amonst themselves
-            CacheMaps.CacheLinks(IOpList);
+        //    // Amonst themselves
+        //    CacheMaps.CacheLinks(IOpList);
 
-            // as antecedants to the originals
-            CacheMaps.CacheLinks(IOpList, originalOps);
+        //    // as antecedants to the originals
+        //    CacheMaps.CacheLinks(IOpList, originalOps);
 
-            // as consequents to the originals
-            CacheMaps.CacheLinks(originalOps, IOpList);
+        //    // as consequents to the originals
+        //    CacheMaps.CacheLinks(originalOps, IOpList);
 
-            // as antecedants to goal conditions
-            CacheMaps.CacheGoalLinks(IOpList, goalConditions);
+        //    // as antecedants to goal conditions
+        //    CacheMaps.CacheGoalLinks(IOpList, goalConditions);
 
-            // is is possible to have a new precondition here that is static? 
-            /// this raises a larger point. 
-            /// should we say that initially we observe the way the world is? (yes)
-            /// should we create simple camera shots for conveying actions so that effects of actions are all observable?
-            /// this is an experimental condition of sorts. In this case, there is no non-static condition that is not observable.
-            /// therefore, (no), there is no need for (extra) statics.
+        //    // is is possible to have a new precondition here that is static? 
+        //    /// this raises a larger point. 
+        //    /// should we say that initially we observe the way the world is? (yes)
+        //    /// should we create simple camera shots for conveying actions so that effects of actions are all observable?
+        //    /// this is an experimental condition of sorts. In this case, there is no non-static condition that is not observable.
+        //    /// therefore, (no), there is no need for (extra) statics.
 
-            // There is also no need to cache addreuseheuristic again because primitive values.
-            //CacheMaps.CacheAddReuseHeuristic(InitialPlan.Initial);
-        }
+        //    // There is also no need to cache addreuseheuristic again because primitive values.
+        //    //CacheMaps.CacheAddReuseHeuristic(InitialPlan.Initial);
+        //}
 
         public static List<CompositeSchedule> GroundDecompositionsToCompositeSteps(List<UnityTimelineDecomp> DecompositionSchemata)
         {
@@ -428,129 +427,6 @@ namespace PlanningNamespace
             return superOrdinateTypes;
         }
 
-        /// <summary>
-        /// Given a primary effect (one that is not the effect of a primitive step), calculate heuristic value.
-        /// Let that heuristic value be the shortest (height) step that can contribute, plus all of its preconditions.
-        /// Recursively, if any of its preconditions are primary effects, then repeat until we have either a step that is true in the initial state or has no primary effects as preconditions.
-        /// </summary>
-        /// <param name="InitialState"></param>
-        /// <param name="primaryEffect"></param>
-        /// <returns></returns>
-        public static void PrimaryEffectHack(IState InitialState)
-        {
-            var initialMap = new TupleMap<IPredicate, int>();
-            var primaryEffectsInInitialState = new List<IPredicate>();
-            foreach(var item in InitialState.Predicates)
-            {
-                if (IsPrimaryEffect(item))
-                {
-                    primaryEffectsInInitialState.Add(item);
-                    initialMap.Get(item.Sign)[item] = 0;
-                }
-            }
-
-            var heurDict = PrimaryEffectRecursiveHeuristicCache(initialMap, primaryEffectsInInitialState);
-
-            foreach(var keyvalue in heurDict.Get(true))
-            {
-                HeuristicMethods.visitedPreds.Get(true)[keyvalue.Key] = keyvalue.Value;
-            }
-            foreach(var keyvalue in heurDict.Get(false))
-            {
-                HeuristicMethods.visitedPreds.Get(false)[keyvalue.Key] = keyvalue.Value;
-            }
-        }
-
-        private static TupleMap<IPredicate, int> PrimaryEffectRecursiveHeuristicCache(TupleMap<IPredicate, int> currentMap, List<IPredicate> InitialConditions)
-        {
-            var initiallyRelevant = new List<IOperator>();
-            var CompositeOps = GroundActionFactory.GroundActions.Where(act => act.Height > 0);
-            foreach(var compOp in CompositeOps)
-            {
-                var initiallySupported = true;
-                foreach(var precond in compOp.Preconditions)
-                {
-                    if (IsPrimaryEffect(precond))
-                    {
-                        // then this is a primary effect.
-                        if (!InitialConditions.Contains(precond))
-                        {
-                            initiallySupported = false;
-                            break;
-                        }
-                    }
-                }
-                if (initiallySupported)
-                {
-                    initiallyRelevant.Add(compOp);
-                }
-            }
-           
-            // a boolean tag to decide whether to continue recursively. If checked, then there is some new effect that isn't in initial conditions.
-            bool toContinue = false;
-
-            // for each step whose preconditions are executable given the initial conditions
-            foreach (var newStep in initiallyRelevant)
-            {
-                // sum_{pre in newstep.preconditions} currentMap[pre]
-                int thisStepsValue = 0;
-                try
-                {
-
-                    foreach (var precon in newStep.Preconditions)
-                    {
-                        if (IsPrimaryEffect(precon))
-                        {
-                            thisStepsValue += currentMap.Get(precon.Sign)[precon];
-                        }
-                        else
-                        {
-                            thisStepsValue += HeuristicMethods.visitedPreds.Get(precon.Sign)[precon];
-                        }
-                    }
-                }
-                catch
-                {
-                    Debug.Log("here");
-                }
-
-
-                foreach (var eff in newStep.Effects)
-                {
-                    if (!IsPrimaryEffect(eff))
-                    {
-                        continue;
-                    }
-
-                    // ignore effects we've already seen; these occur "earlier" in planning graph
-                    if (currentMap.Get(eff.Sign).ContainsKey(eff))
-                        continue;
-
-                    // If we make it this far, then we've reached an unexplored literal effect
-                    toContinue = true;
-
-                    // The current value of this effect is 1 (this new step) + the sum of the preconditions of this step in the map.
-                    currentMap.Get(eff.Sign)[eff] = 1 + thisStepsValue;
-
-                    // Add this effect to the new initial Condition for subsequent round
-                    InitialConditions.Add(eff);
-                }
-            }
-
-            // Only continue recursively if we've explored a new literal effect. Pass the map along to maintain a global item.
-            if (toContinue)
-                return PrimaryEffectRecursiveHeuristicCache(currentMap, InitialConditions);
-
-            // Otherwise, return our current map
-            return currentMap;
-
-        }
-
-        public static bool IsPrimaryEffect(IPredicate pred)
-        {
-            return (pred.Name.Equals("obs") || pred.Name.Equals("obs-starts"));
-        }
-
         public static void RemoveStaticPreconditions(List<IOperator> groundActions)
         {
             foreach (var ga in groundActions)
@@ -562,17 +438,17 @@ namespace PlanningNamespace
                     {
                         continue;
                     }
-                    if (IsPrimaryEffect(precon))
-                    {
-                        var termAsPred = precon.Terms[0] as IPredicate;
-                        if (termAsPred != null)
-                        {
-                            if (GroundActionFactory.Statics.Contains(termAsPred))
-                            {
-                                continue;
-                            }
-                        }
-                    }
+                    //if (IsPrimaryEffect(precon))
+                    //{
+                    //    var termAsPred = precon.Terms[0] as IPredicate;
+                    //    if (termAsPred != null)
+                    //    {
+                    //        if (GroundActionFactory.Statics.Contains(termAsPred))
+                    //        {
+                    //            continue;
+                    //        }
+                    //    }
+                    //}
                     newPreconds.Add(precon);
                 }
 

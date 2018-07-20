@@ -68,7 +68,7 @@ namespace  PlanningNamespace
                 // Follow Unity Instructions
                 var instructions = action.UnityInstructions;
 
-                var defaultIncrementTime = 1;
+                var defaultIncrementTime = 1.4;
                 //if (actionGameObjectHost.tag == "Navigation")
                 //{
                 //    // then we need to calculate the increment time for the "steer" instruction
@@ -152,6 +152,10 @@ namespace  PlanningNamespace
             // arg 1 is agent, arg 2 is source, arg 3 is destination
             SteerClip(agent, steerStart, steerFinish, true, true, true, CI);
 
+            // Also, add a brief execution to bring steering to finish
+            var followUpCI = new ClipInfo(director, startTime + duration, 0.3f, "follow up");
+            SteerClip(agent, steerFinish, steerFinish, true, false, false, followUpCI);
+
             return CI;
         }
 
@@ -234,6 +238,7 @@ namespace  PlanningNamespace
 
                 var displayName = string.Format("{0} {1} {2} {3}", instructionType, agent.name, source.name, sink.name);
                 CI.display = displayName;
+                
 
                 // Initiate the Steering capability of the agent
                 var DS_TC = agent.GetComponent<DynoBehavior_TimelineControl>();
@@ -241,8 +246,11 @@ namespace  PlanningNamespace
 
                 var steerStart = new Vector3(source.transform.position.x, agent.transform.position.y, source.transform.position.z);
                 var steerFinish = new Vector3(sink.transform.position.x, agent.transform.position.y, sink.transform.position.z);
+
+                //CI.duration -= (0.017 * 2);
                 // arg 1 is agent, arg 2 is source, arg 3 is destination
                 SteerClip(agent, steerStart, steerFinish, true, true, true, CI);
+                //SteerClip(agent, steerFinish, steerFinish, false, false, false, CI);
             }
 
             if (instructionType.Equals("orient"))

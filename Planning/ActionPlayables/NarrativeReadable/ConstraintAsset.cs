@@ -1,4 +1,5 @@
-﻿using PlanningNamespace;
+﻿using BoltFreezer.Camera.CameraEnums;
+using PlanningNamespace;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -11,7 +12,7 @@ namespace TimelineClipsNamespace
     [Serializable]
     public class ConstraintAsset : PlayableAsset
     {
-
+        public List<EditingConstraints> editingConstraints;
 
         [SerializeField]
         public List<string> Constraints = new List<string>();

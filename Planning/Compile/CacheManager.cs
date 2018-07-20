@@ -154,7 +154,7 @@ namespace CompilationNamespace
             CacheMaps.CacheLinks(GroundActionFactory.GroundActions);
             CacheMaps.CacheGoalLinks(GroundActionFactory.GroundActions, UPC.goalPredicateList);
             CacheMaps.CacheAddReuseHeuristic(new State(UPC.initialPredicateList) as IState);
-            UnityGroundActionFactory.PrimaryEffectHack(new State(UPC.initialPredicateList) as IState);
+            CacheMaps.PrimaryEffectHack(new State(UPC.initialPredicateList) as IState);
 
             //try
             //{

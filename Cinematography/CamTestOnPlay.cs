@@ -15,10 +15,10 @@ public class CamTestOnPlay : MonoBehaviour {
     private CamGen camGen;
     public GameObject Target;
 
-    public List<GameObject> CameraList
-    {
-        get { return camGen.CameraList; }
-    }
+    //public List<GameObject> CameraList
+    //{
+    //    get { return camGen.CameraList; }
+    //}
 
     //void Awake()
     //{
@@ -44,31 +44,31 @@ public class CamTestOnPlay : MonoBehaviour {
 	}
 	
 	// Update is called once per frame
-	void Update () {
-        if (CameraList.Count > 0)
-        {
-            if (Time.time - prevTime > shotDuration)
-            {
-                if (camIndex > -1)
-                    CameraList[camIndex].SetActive(false);
-                camIndex++;
-                if (camIndex >= CameraList.Count)
-                {
-                    camIndex = 0;
-                }
+	//void Update () {
+ //       if (CameraList.Count > 0)
+ //       {
+ //           if (Time.time - prevTime > shotDuration)
+ //           {
+ //               if (camIndex > -1)
+ //                   CameraList[camIndex].SetActive(false);
+ //               camIndex++;
+ //               if (camIndex >= CameraList.Count)
+ //               {
+ //                   camIndex = 0;
+ //               }
 
-                CameraList[camIndex].GetComponent<CinemachineVirtualCamera>().m_LookAt = Target.transform;
+ //               CameraList[camIndex].GetComponent<CinemachineVirtualCamera>().m_LookAt = Target.transform;
 
-                //CameraList[camIndex].GetComponent<CinemachineCameraBody>().FocusTransform = Target.transform;
-                CameraList[camIndex].SetActive(true);
-                prevTime = Time.time;
-                Debug.Log(CameraList[camIndex].name);
-            }
-        }
-        else
-        {
-            numCams = CameraList.Count;
-        }
+ //               //CameraList[camIndex].GetComponent<CinemachineCameraBody>().FocusTransform = Target.transform;
+ //               CameraList[camIndex].SetActive(true);
+ //               prevTime = Time.time;
+ //               Debug.Log(CameraList[camIndex].name);
+ //           }
+ //       }
+ //       else
+ //       {
+ //           numCams = CameraList.Count;
+ //       }
 		
-	}
+	//}
 }

@@ -49,11 +49,6 @@ namespace CameraNamespace
             return other.scale == scale;
         }
 
-
-        public CamSchema AsSchema()
-        {
-            return new CamSchema(scale, targetLocation, targetOrientation, hangle, vangle);
-        }
     }
 
   

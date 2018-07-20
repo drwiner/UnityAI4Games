@@ -72,15 +72,14 @@ namespace PlanningNamespace
             double startTime = 0;
             double accumulatedTime = 0;
             char[] charsToTrim = { '(', ')' };
-            int lastFilmClipIndex = -1;
-            string lastCameraName= "";
             var CIList = new List<ClipInfo>();
             foreach (var step in discourseSteps)
             {
                 // Extract Schemata
                 var camSchema = step.CamDetails;
-                var sampleTarget = GameObject.Find(step.TargetDetails.ActionSegs[0].targetVarName);
-                var cameraClone = CamGen.CreateCameraFromSchema(sampleTarget, step.CamDetails);
+                
+                // Create camera from schema
+                var cameraClone = CamGen.CreateCameraFromSchema(camSchema);
                 
                 cameraClone.transform.parent = cameraOptionsHost.transform;
                 //var cameraInstance = CamPlan.FindCameraInstance(cameraOptionsHost, camSchema);
@@ -95,17 +94,29 @@ namespace PlanningNamespace
                 var cvc = cameraClone.GetComponent<CinemachineVirtualCamera>();
                 var ccb = cameraClone.GetComponent<CinemachineCameraBody>();
 
-                CamDirective CameraAimType = step.directive;
+                //CamDirective CameraAimType = step.directive;
 
                 //cvc.m_LookAt = GameObject.Find(camSchema.targetLocation).transform;
 
                 // for each action segment, create a time travel clip to the 
                 var targetSchema = step.TargetDetails;
 
+                string lastFocus = "";
+                TimelineClip lastFocusAsset = null;
+
+                string lastPan = "";
+                TimelineClip lastPanAsset = null;
+
+                string lastCoord = "";
+                TimelineClip lastCoordAsset = null;
+                //var lastDirective = null;
+                //var lastCoordinate = null;
+
                 accumulatedTime = 0;
                 foreach (var actionSeg in targetSchema.ActionSegs)
                 {
-                    var targetOfFocus = GameObject.Find(actionSeg.targetVarName).transform;
+
+                    var targetOfFocus = CreateTarget(actionSeg.targetVarName).transform;
 
                     // The fabula ClipInfo associated with entire Action (in future, could track all sub-clips
                     var timelineclip = mappingActionSegIDsToDurativeClips[actionSeg.ActionID];
@@ -119,7 +130,7 @@ namespace PlanningNamespace
                     // Create display
                     var displayOfClip = string.Format("{0} of {1} from {2} to {3}", camSchema.scale, timelineclip.display, actionSeg.startPercent.ToString(), actionSeg.endPercent.ToString());
                     var originalCameraCloneName = cameraClone.name;
-                    cameraClone.name += "_//_" + timelineclip.display + "_// focusOn: " + targetOfFocus.name + "// achor: " + targetSchema.location;
+                    cameraClone.name += "_//_" + timelineclip.display + "_// focusOn: " + actionSeg.targetVarName + "// achor: " + targetSchema.location;
 
                     // Create ClipInfo unit
                     var CI = new ClipInfo(director, startTime + accumulatedTime, amountOfDuration, displayOfClip);
@@ -130,40 +141,98 @@ namespace PlanningNamespace
                     // If this Unity Action is a "navigation" action, then extra steps are required
                     if (unityActionOperatorHost.tag.Equals("Navigation"))
                     {
-                        FilmNavigation(cameraClone, cvc, ccb, CI, timelineclip, actionSeg, CameraAimType, intoClipStart, targetOfFocus, targetLocation);
-
-                        // Focus on target of focus
-                        FocusClip((float)CI.start, (float)CI.duration, CI.display, ccb, targetOfFocus);
+                        FilmNavigation(cameraClone, cvc, ccb, CI, timelineclip, actionSeg, actionSeg.directive, intoClipStart, targetOfFocus, targetLocation);
                     }
                     else // It's not a navigation action.
                     {
-                        var newTarget = FilmStationary(cameraClone, cvc, ccb, CI, actionSeg, CameraAimType, targetOfFocus, targetLocation);
+                        if (actionSeg.directive.Equals(CamDirective.Stationary))
+                        {
+                            cvc.m_LookAt = targetLocation;
+                        }
+                        else if (actionSeg.directive.Equals(CamDirective.GroupAim))
+                        {
+                            // Set orientation of camera to a CinematicGroupTarget
 
-                        // target of focus is reclaculated if group shot
-                        FocusClip((float)CI.start, (float)CI.duration, CI.display, ccb, newTarget);
+                            //var gc = cvc.AddCinemachineComponent<CinemachineGroupComposer>();
+                            //var gc = cvc.AddCinemachineComponent<CinemachineComposer>();
+
+                            if (targetOfFocus.name.Equals(lastPan))
+                            {
+                                lastPanAsset.duration += (float)CI.duration;
+                            }
+                            else
+                            {
+                                cvc.m_LookAt = targetOfFocus;
+                                lastPanAsset = PanClip((float)CI.start, (float)CI.duration, CI.display, cvc, targetOfFocus);
+                                lastPan = targetOfFocus.name;
+                            }
+
+                            //return groupTarget.transform;
+
+                        }
+                        else if (actionSeg.directive.Equals(CamDirective.Follow))
+                        {
+                            // TODO: add "last follow" if then clause
+                            FollowClip((float)CI.start, (float)CI.duration, CI.display, cvc, targetOfFocus);
+                        }
+                        else
+                        {
+                            if (targetOfFocus.name.Equals(lastPan))
+                            {
+                                lastPanAsset.duration += (float)CI.duration;
+                            }
+                            else
+                            {
+                                cvc.m_LookAt = targetOfFocus;
+                                lastPanAsset = PanClip((float)CI.start, (float)CI.duration, CI.display, cvc, targetOfFocus);
+                                lastPan = targetOfFocus.name;
+                            }
+                        }
+
+                        //FilmStationary(cameraClone, cvc, ccb, CI, actionSeg, actionSeg.directive, targetOfFocus, targetLocation);
                     }
 
+                    // Add new focus clip if app
+                    if (targetOfFocus.name.Equals(lastFocus))
+                    {
+                        lastFocusAsset.duration += (float)CI.duration;
+                    }
+                    else
+                    {
+                        var focusAsset = FocusClip((float)CI.start, (float)CI.duration, CI.display, ccb, targetOfFocus);
+                        lastFocusAsset = focusAsset;
+                        lastFocus = targetOfFocus.name;
+                    }
+
+
                     // Each action seg has composition
-                    var xzValue = CinematographyAttributes.ScreenComposition[actionSeg.screenxz];
-                    ScreenCoordinateClip((float)CI.start, (float)CI.duration, CI.display, cvc, xzValue);
+                    if (actionSeg.screenxy.Equals(lastCoord))
+                    {
+                        lastCoordAsset.duration += (float)CI.duration;
+                    }
 
-                    
+                    else
+                    {
+                        var xzValue = CinematographyAttributes.ScreenComposition[actionSeg.screenxy];
 
-                    // Create a Cinemachine Timeline Clip
-                    // Compare lastFilmClip to this one
-                    //if (originalCameraCloneName.Equals(lastCameraName))
-                    //{
-                    //    // Alter ending time
-                    //    var lastClip = filmTrack.GetClips().ToList()[lastFilmClipIndex];
-                    //    lastClip.duration += CI.duration;
-                    //}
-                    //else
-                    //{
-                    //    FilmClip((float)CI.start, (float)CI.duration, CI.display, cvc);
-                    //}
-                    
-                    //lastCameraName = cameraClone.name;
-                    //lastFilmClipIndex++;
+                        lastCoordAsset = ScreenCoordinateClip((float)CI.start, (float)CI.duration, CI.display, cvc, xzValue);
+                        lastCoord = actionSeg.screenxy.ToString();
+                    }
+                        // Create a Cinemachine Timeline Clip
+                        // Compare lastFilmClip to this one
+                        //if (originalCameraCloneName.Equals(lastCameraName))
+                        //{
+                        //    // Alter ending time
+                        //    var lastClip = filmTrack.GetClips().ToList()[lastFilmClipIndex];
+                        //    lastClip.duration += CI.duration;
+                        //}
+                        //else
+                        //{
+                        //    FilmClip((float)CI.start, (float)CI.duration, CI.display, cvc);
+                        //}
+
+                        //lastCameraName = cameraClone.name;
+                        //lastFilmClipIndex++;
 
                     accumulatedTime += amountOfDuration;
                 }
@@ -180,52 +249,43 @@ namespace PlanningNamespace
           
         }
 
-        public Transform FilmStationary(GameObject cameraClone, CinemachineVirtualCamera cvc, CinemachineCameraBody ccb, ClipInfo CI, ActionSeg actionSeg, CamDirective CameraAimType, Transform targetOfFocus, Transform targetLocation)
+        public GameObject CreateTarget(string targetNames)
         {
-            
+            var tsplit = targetNames.Split(' ');
 
-            if (CameraAimType.Equals(CamDirective.Stationary))
+            if (tsplit.Count() == 1)
             {
-                // Do nothing
-                cvc.m_LookAt = targetLocation;
-            }
-            else if (CameraAimType.Equals(CamDirective.GroupAim))
-            {
-                // Set orientation of camera to a CinematicGroupTarget
-                var groupTarget = new GameObject();
-                var gt = groupTarget.AddComponent<CinemachineTargetGroup>();
-
-                // The two targets are the orientTowards and the targetlocation
-                gt.m_Targets = new CinemachineTargetGroup.Target[2];
-                //gt.m_Targets[0] = new CinemachineTargetGroup.Target();
-                gt.m_Targets[0].target = targetLocation;
-                gt.m_Targets[0].weight = 1;
-                gt.m_Targets[1].target = targetOfFocus;
-                gt.m_Targets[1].weight = 1;
-
-                cvc.m_LookAt = groupTarget.transform;
-                var gc = cvc.AddCinemachineComponent<CinemachineGroupComposer>();
-                //gc.m_ScreenX = //
-
-                PanClip((float)CI.start, (float)CI.duration, CI.display, cvc, groupTarget.transform);
-
-                return groupTarget.transform;
-
-            }
-            else if (CameraAimType.Equals(CamDirective.Follow))
-            {
-                FollowClip((float)CI.start, (float)CI.duration, CI.display, cvc, targetOfFocus);
-            }
-            else
-            {
-                cvc.m_LookAt = targetLocation;
-                PanClip((float)CI.start + 0.0833f, (float)CI.duration - 0.0833f, CI.display, cvc, targetOfFocus);
+                return GameObject.Find(targetNames);
             }
 
-            return targetOfFocus;
+            var groupTarget = new GameObject(targetNames);
+            var gt = groupTarget.AddComponent<CinemachineTargetGroup>();
+            gt.m_Targets = new CinemachineTargetGroup.Target[tsplit.Count()];
+
+            for (int i =0; i < tsplit.Count(); i++)
+            {
+                if (tsplit[i].Equals(""))
+                {
+                    // this way it doesn't matter if we've got a blank element
+                    gt.m_Targets[i].weight = 0;
+                    continue;
+                }
+                gt.m_Targets[i].target = GameObject.Find(tsplit[i]).transform;
+                gt.m_Targets[i].weight = 1;
+            }
+            return groupTarget;
         }
 
-        public Transform FilmNavigation(GameObject cameraClone, CinemachineVirtualCamera cvc, CinemachineCameraBody ccb, ClipInfo CI, ClipInfo timelineclip, 
+        //public Transform FilmStationary(GameObject cameraClone, CinemachineVirtualCamera cvc, CinemachineCameraBody ccb, ClipInfo CI, ActionSeg actionSeg, CamDirective CameraAimType, Transform targetOfFocus, Transform targetLocation)
+        //{
+            
+
+            
+
+        //    return targetOfFocus;
+        //}
+
+        public void FilmNavigation(GameObject cameraClone, CinemachineVirtualCamera cvc, CinemachineCameraBody ccb, ClipInfo CI, ClipInfo timelineclip, 
             ActionSeg actionSeg, CamDirective CameraAimType, double intoClipStart, Transform targetOfFocus, Transform targetLocation)
         {
             Vector3 halfwayPointDistanceTraveled;
@@ -307,13 +367,19 @@ namespace PlanningNamespace
             {
                 // stationary cam
                 // displace by halfway point from starting
-                halfwayPointDistanceTraveled = whereObjectWillBeAtStart + (whereObjectWillBeAtEnd - whereObjectWillBeAtStart) / 2;
-                var displacement = halfwayPointDistanceTraveled - targetLocation.position;
-                displacement = new Vector3(displacement.x, 0f, displacement.z);
 
-                cameraClone.transform.position = cameraClone.transform.position + displacement;
+                
+                halfwayPointDistanceTraveled = whereObjectWillBeAtStart + (whereObjectWillBeAtEnd - whereObjectWillBeAtStart) / 2;
+
+                /////////////////////////// Legacy: now, this is calculated a priori //////////////////////////////////////////////
+                //var displacement = halfwayPointDistanceTraveled - targetLocation.position;
+                //displacement = new Vector3(displacement.x, 0f, displacement.z);
+                //cameraClone.transform.position = cameraClone.transform.position + displacement;
+                ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
                 var fakeGO = new GameObject();
                 fakeGO.transform.position = halfwayPointDistanceTraveled;
+
                 PanClip((float)CI.start, (float)CI.duration, CI.display, cvc, fakeGO.transform);
                 // for right now, set to look at location
                 cvc.m_LookAt = fakeGO.transform;
@@ -321,23 +387,17 @@ namespace PlanningNamespace
             else if (CameraAimType.Equals(CamDirective.Follow))
             {
 
-                //follow cam -- displace it from sa.startPos to sa.EndPos
-                // do not displace.
-                var displacement = whereObjectWillBeAtStart - targetLocation.position;
-                displacement = new Vector3(displacement.x, 0f, displacement.z);
-                cameraClone.transform.position = cameraClone.transform.position + displacement;
+                /////////////////////////// Legacy: now, this is calculated a priori //////////////////////////////////////////////
+                //var displacement = whereObjectWillBeAtStart - targetLocation.position;
+                //displacement = new Vector3(displacement.x, 0f, displacement.z);
+                //cameraClone.transform.position = cameraClone.transform.position + displacement;
+                ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 cameraClone.transform.LookAt(targetLocation);
 
-                //cvc.GetCinemachineComponent<>
                 cvc.m_Follow = targetLocation;
                 var cft = cvc.AddCinemachineComponent<CinemachineTransposer>();
                 
-                //var cft = cvc.GetComponent<CinemachineFramingTransposer>();
-
-                // Now, reposition camera
-                //cameraClone.transform.position = cameraClone.transform.position + displacement;
-                //cameraClone.transform.LookAt(targetLocation);
                 FollowClip((float)CI.start, (float)CI.duration, CI.display, cvc, targetOfFocus);
             }
             else if (CameraAimType.Equals(CamDirective.GroupAim))
@@ -355,47 +415,49 @@ namespace PlanningNamespace
                 gt.m_Targets[1].weight = 1;
 
                 cvc.m_LookAt = groupTarget.transform;
+                //cvc.m_LookAt = targetOfFocus;
                 //cvc.m_Follow = groupTarget.transform;
-                var gc = cvc.AddCinemachineComponent<CinemachineGroupComposer>();
+
+                // Group Composer causes dolly and zoom behavior
+                //var gc = cvc.AddCinemachineComponent<CinemachineGroupComposer>();
+
+
                 //gc.m_ScreenX = //
                 //var cClearShot = cameraClone.AddComponent<CinemachineClearShot>();
-               // cClearShot.m_LookAt = groupTarget.transform;
+                // cClearShot.m_LookAt = groupTarget.transform;
 
                 PanClip((float)CI.start, (float)CI.duration, CI.display, cvc, groupTarget.transform);
-
-                return groupTarget.transform;
             }
 
             else //default is pan
             {
                 // Pan Cam
-                halfwayPointDistanceTraveled = whereObjectWillBeAtStart + (whereObjectWillBeAtEnd - whereObjectWillBeAtStart) / 2;
-                var displacement = halfwayPointDistanceTraveled - targetLocation.position;
-                displacement = new Vector3(displacement.x, 0f, displacement.z);
-
-                cameraClone.transform.position = cameraClone.transform.position + displacement;
+                //
+                //halfwayPointDistanceTraveled = whereObjectWillBeAtStart + (whereObjectWillBeAtEnd - whereObjectWillBeAtStart) / 2;
+                //var displacement = halfwayPointDistanceTraveled - targetLocation.position;
+                //displacement = new Vector3(displacement.x, 0f, displacement.z);
+               // cameraClone.transform.position = cameraClone.transform.position + displacement;
                 cvc.m_LookAt = targetLocation;
                 
 
                 PanClip((float)CI.start + 0.0833f, (float)CI.duration - 0.0833f, CI.display, cvc, targetOfFocus);
             }
 
-            return targetOfFocus;
         }
 
-        public static GameObject FindCameraInstance(GameObject CamerasHost, CamSchema criteria)
-        {
-            for (int i = 0; i < CamerasHost.transform.childCount; i++)
-            {
-                var camToCheck = CamerasHost.transform.GetChild(i);
-                var camAttributes = camToCheck.GetComponent<CamAttributesStruct>();
-                if (criteria.IsConsistent(camAttributes.AsSchema()))
-                {
-                    return camToCheck.gameObject;
-                }
-            }
-            return null;
-        }
+        //public static GameObject FindCameraInstance(GameObject CamerasHost, CamSchema criteria)
+        //{
+        //    for (int i = 0; i < CamerasHost.transform.childCount; i++)
+        //    {
+        //        var camToCheck = CamerasHost.transform.GetChild(i);
+        //        var camAttributes = camToCheck.GetComponent<CamAttributesStruct>();
+        //        if (criteria.IsConsistent(camAttributes.AsSchema()))
+        //        {
+        //            return camToCheck.gameObject;
+        //        }
+        //    }
+        //    return null;
+        //}
 
         public void TimeBind(TimeTravelAsset tta, PlayableDirector fabulaPD, float new_val)
         {
@@ -443,7 +505,7 @@ namespace PlanningNamespace
             director.SetReferenceValue(xyasset.CVC.exposedName, cvc);
         }
 
-        public void ScreenCoordinateClip(float start, float duration, string displayname, CinemachineVirtualCamera cvc, Tuple<double, double> screenxz)
+        public TimelineClip ScreenCoordinateClip(float start, float duration, string displayname, CinemachineVirtualCamera cvc, Tuple<double, double> screenxz)
         {
             TimelineClip tc = screenTrack.CreateClip<CamScreenCompositionAsset>();
 
@@ -453,6 +515,7 @@ namespace PlanningNamespace
 
             var compClip = tc.asset as CamScreenCompositionAsset;
             ScreenCoordinateBind(compClip, cvc, screenxz);
+            return tc;
         }
 
         public void TimeClip(float start, float duration, string displayname, PlayableDirector fabulaPD, float newTime)
@@ -479,7 +542,7 @@ namespace PlanningNamespace
             CamBind(film_clip, cvc);
         }
 
-        public void FocusClip(float start, float duration, string displayName,  CinemachineCameraBody ccb, Transform focus)
+        public TimelineClip FocusClip(float start, float duration, string displayName,  CinemachineCameraBody ccb, Transform focus)
         {
             TimelineClip tc = focusTrack.CreateClip<CamFocusAsset>();
 
@@ -489,9 +552,10 @@ namespace PlanningNamespace
 
             var focus_clip = tc.asset as CamFocusAsset;
             FocusBind(focus_clip,ccb, focus);
+            return tc;
         }
 
-        public void FollowClip(float start, float duration, string displayName, CinemachineVirtualCamera cvc, Transform focus)
+        public TimelineClip FollowClip(float start, float duration, string displayName, CinemachineVirtualCamera cvc, Transform focus)
         {
             TimelineClip tc = followTrack.CreateClip<CamFollowAsset>();
 
@@ -501,9 +565,10 @@ namespace PlanningNamespace
 
             var focus_clip = tc.asset as CamFollowAsset;
             FollowBind(focus_clip, cvc, focus);
+            return tc;
         }
 
-        public void PanClip(float start, float duration, string displayName, CinemachineVirtualCamera cvc, Transform focus)
+        public TimelineClip PanClip(float start, float duration, string displayName, CinemachineVirtualCamera cvc, Transform focus)
         {
             TimelineClip tc = panTrack.CreateClip<CamPanAsset>();
 
@@ -513,6 +578,7 @@ namespace PlanningNamespace
 
             var focus_clip = tc.asset as CamPanAsset;
             PanBind(focus_clip, cvc, focus);
+            return tc;
         }
 
 

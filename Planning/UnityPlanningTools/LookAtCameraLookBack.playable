@@ -37,6 +37,8 @@ MonoBehaviour:
     targetOrientation: 0
     hangle: 7
     vangle: 1
+    distance: 0
+    height: 0
   targetSchema:
     orient: 0
     actionSegOfFocus: 0
@@ -48,8 +50,8 @@ MonoBehaviour:
       actiontypeID: 0
       startPercent: 0.11
       endPercent: 0.43
-      screenxz: 4
-  camDirective: 2
+      screenxy: 4
+      directive: 2
   Constraints: []
 --- !u!114 &114081251381941930
 MonoBehaviour:
@@ -81,6 +83,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 372f6bb2f4dee2748afc882c784fb3f0, type: 3}
   m_Name: ConstraintAsset
   m_EditorClassIdentifier: 
+  editingConstraints: 
   Constraints:
   - link Arrive LookX
   - link Arrive LookX2
@@ -217,6 +220,8 @@ MonoBehaviour:
     targetOrientation: 0
     hangle: 1
     vangle: 1
+    distance: 0
+    height: 0
   targetSchema:
     orient: 0
     actionSegOfFocus: 0
@@ -228,20 +233,22 @@ MonoBehaviour:
       actiontypeID: 0
       startPercent: 0.18
       endPercent: 1
-      screenxz: 4
+      screenxy: 4
+      directive: 2
     - actionVarName: LookX2
       targetVarName: agent
       actiontypeID: 0
       startPercent: 0
       endPercent: 1
-      screenxz: 4
+      screenxy: 4
+      directive: 2
     - actionVarName: Depart
       targetVarName: agent
       actiontypeID: 0
       startPercent: 0
       endPercent: 0.11
-      screenxz: 4
-  camDirective: 1
+      screenxy: 4
+      directive: 2
   Constraints: []
 --- !u!114 &114744542817937288
 MonoBehaviour:
@@ -260,6 +267,8 @@ MonoBehaviour:
     targetOrientation: 0
     hangle: 7
     vangle: 1
+    distance: 0
+    height: 0
   targetSchema:
     orient: 0
     actionSegOfFocus: 1
@@ -271,14 +280,15 @@ MonoBehaviour:
       actiontypeID: 0
       startPercent: 0.48
       endPercent: 1
-      screenxz: 4
+      screenxy: 4
+      directive: 2
     - actionVarName: LookX
       targetVarName: 
       actiontypeID: 0
       startPercent: 0
       endPercent: 0.18
-      screenxz: 4
-  camDirective: 1
+      screenxy: 4
+      directive: 2
   Constraints: []
 --- !u!114 &114879984951233900
 MonoBehaviour:

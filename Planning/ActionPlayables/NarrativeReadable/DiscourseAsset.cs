@@ -16,7 +16,7 @@ namespace TimelineClipsNamespace
     {
         public CamSchema camSchema;
         public CamTargetSchema targetSchema;
-        public CamDirective camDirective;
+       // public CamDirective camDirective;
         public List<string> Constraints;
 
         public override Playable CreatePlayable(PlayableGraph graph, GameObject owner)

@@ -68,63 +68,63 @@ namespace CameraNamespace
                 test = false;
                 Debug.Log("not yet implemented");
             }
-            if (findCandidates)
-            {
-                findCandidates = false;
-                Debug.Log(string.Format("processing candidates from {0} gameobjects", camCollection.CameraList.Count));
-                FindCandidates();
-            }
+            //if (findCandidates)
+            //{
+            //    findCandidates = false;
+            //    Debug.Log(string.Format("processing candidates from {0} gameobjects", camCollection.CameraList.Count));
+            //    FindCandidates();
+            //}
 
         }
 
-        public void FindCandidates()
-        {
+        //public void FindCandidates()
+        //{
             
-            foreach (var cts in camTransitionSchemas)
-            {
-                // find all that are candidates
-                var cndtsForShot1 = FindCandidatesForCamSchema(cts.Shot1);
+        //    foreach (var cts in camTransitionSchemas)
+        //    {
+        //        // find all that are candidates
+        //        var cndtsForShot1 = FindCandidatesForCamSchema(cts.Shot1);
 
-                if (cndtsForShot1.Count == 0)
-                {
-                    Debug.Log(string.Format("no candidates found for {0}", cts.Shot1));
-                    //continue;
-                }
+        //        if (cndtsForShot1.Count == 0)
+        //        {
+        //            Debug.Log(string.Format("no candidates found for {0}", cts.Shot1));
+        //            //continue;
+        //        }
 
-                var cndtsForShot2 = FindCandidatesForCamSchema(cts.Shot2);
+        //        var cndtsForShot2 = FindCandidatesForCamSchema(cts.Shot2);
 
-                if (cndtsForShot1.Count == 0)
-                {
-                    Debug.Log(string.Format("no candidates found for {0}", cts.Shot2));
-                    continue;
-                }
+        //        if (cndtsForShot1.Count == 0)
+        //        {
+        //            Debug.Log(string.Format("no candidates found for {0}", cts.Shot2));
+        //            continue;
+        //        }
 
-                cts.camTransitions = new List<CamTransition>();
+        //        cts.camTransitions = new List<CamTransition>();
 
-                foreach (var cndtShot1 in cndtsForShot1)
-                {
-                    foreach (var cndtShot2 in cndtsForShot2)
-                    {
-                        bool passesConstraints = true;
-                        // Check for pair constraints
-                        foreach (var constraint in cts.Constraints)
-                        {
-                            if (!CheckConstraint(cndtShot1.GetComponent<CamAttributesStruct>(), cndtShot2.GetComponent<CamAttributesStruct>(), constraint))
-                            {
-                                passesConstraints = false;
-                                break;
-                            }
-                        }
+        //        foreach (var cndtShot1 in cndtsForShot1)
+        //        {
+        //            foreach (var cndtShot2 in cndtsForShot2)
+        //            {
+        //                bool passesConstraints = true;
+        //                // Check for pair constraints
+        //                foreach (var constraint in cts.Constraints)
+        //                {
+        //                    if (!CheckConstraint(cndtShot1.GetComponent<CamAttributesStruct>(), cndtShot2.GetComponent<CamAttributesStruct>(), constraint))
+        //                    {
+        //                        passesConstraints = false;
+        //                        break;
+        //                    }
+        //                }
 
-                        if (passesConstraints)
-                            cts.camTransitions.Add(new CamTransition(cndtShot1, cndtShot2));
-                    }
-                }
+        //                if (passesConstraints)
+        //                    cts.camTransitions.Add(new CamTransition(cndtShot1, cndtShot2));
+        //            }
+        //        }
 
-            }
-            Debug.Log("finished processing candidates");
+        //    }
+        //    Debug.Log("finished processing candidates");
 
-        }
+        //}
 
         public bool CheckConstraint(CamAttributesStruct shot1, CamAttributesStruct shot2, string constraint)
         {
@@ -184,20 +184,20 @@ namespace CameraNamespace
             return true;
         }
 
-        public List<GameObject> FindCandidatesForCamSchema(CamSchema cschema)
-        {
-            List<GameObject> cndts = new List<GameObject>();
+        //public List<GameObject> FindCandidatesForCamSchema(CamSchema cschema)
+        //{
+        //    List<GameObject> cndts = new List<GameObject>();
 
-            foreach (var cam in camCollection.CameraList)
-            {
-                if (cschema.IsConsistent(cam.GetComponent<CamAttributesStruct>().AsSchema()))
-                {
-                    cndts.Add(cam);
-                }
-            }
+        //    foreach (var cam in camCollection.CameraList)
+        //    {
+        //        if (cschema.IsConsistent(cam.GetComponent<CamAttributesStruct>().AsSchema()))
+        //        {
+        //            cndts.Add(cam);
+        //        }
+        //    }
 
-            return cndts;
-        }
+        //    return cndts;
+        //}
     }
 
     [Serializable]

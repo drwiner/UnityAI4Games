@@ -236,8 +236,8 @@ namespace SteeringNamespace
             seekTask = () => Seek(arrive);
             alignTask = Align;
 
-            Mathf.Lerp(transform.position.x, origin.x,  1f);
-            Mathf.Lerp(transform.position.z, origin.z,  1f);
+            Mathf.Lerp(transform.position.x, origin.x,  .25f);
+            Mathf.Lerp(transform.position.z, origin.z,  .25f);
 
             //Mathf.SmoothDamp(transform.position.x, origin.x, ref positionRefx, 1f);
             //Mathf.SmoothDamp(transform.position.z, origin.z, ref positionRefz, 1f);

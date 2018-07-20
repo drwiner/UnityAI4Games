@@ -6,6 +6,7 @@ using BoltFreezer.PlanTools;
 using BoltFreezer.Utilities;
 using CameraNamespace;
 using GraphNamespace;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,14 +23,9 @@ namespace CompilationNamespace
 
         public static void SetCamsAndLocations(GameObject CameraHost, GameObject LocationHost)
         {
-            CamOptions = new List<CamSchema>();
-
-            foreach (var cam in CameraCacheManager.CachedCams)
-            {
-                CamOptions.Add(cam);
-            }
-
-            NavCamDict = CameraHost.GetComponent<CamGen>().navCamDictionary;
+            CameraCacheManager.DecacheCams(CameraHost.GetComponent<CamGen>().cacheFileName);
+            NavCamDict = CameraCacheManager.CalculateNavCamDictFromCache();
+            //NavCamDict = CameraHost.GetComponent<CamGen>().navCamDictionary;
 
 
             LocationMap = new Dictionary<string, Vector3>();
@@ -89,7 +85,6 @@ namespace CompilationNamespace
 
         public static Orient MapToNearest(float orientFloat)
         {
-            Orient orientEnum;
             while (orientFloat > 360)
             {
                 orientFloat -= 360;
@@ -98,47 +93,26 @@ namespace CompilationNamespace
             {
                 orientFloat += 360;
             }
+            orientFloat = 360 - orientFloat;
 
-            if ((orientFloat < 25 && orientFloat > -25) || (orientFloat > 335 && orientFloat < 385))
+            var bestSoFar = Orient.None;
+            var bestDistance = 400f;
+            foreach (var orient in System.Enum.GetValues(typeof(Orient)).Cast<Orient>())
             {
-                orientEnum = Orient.o0;
+                if (orient == Orient.None)
+                {
+                    continue;
+                }
+                var floatValue = orient.ToString().Split('o')[1];
+                var dist = Mathf.Abs(Mathf.RoundToInt(orientFloat) - Int32.Parse(floatValue));
+                if (dist < bestDistance)
+                {
+                    bestDistance = dist;
+                    bestSoFar = orient;
+                }
             }
-            else if (orientFloat >= 25 && orientFloat <= 65)
-            {
-                orientEnum = Orient.o45;
-            }
-            else if (orientFloat > 65 && orientFloat < 115)
-            {
-                orientEnum = Orient.o90;
-            }
-            else if (orientFloat >= 115 && orientFloat <= 155)
-            {
-                orientEnum = Orient.o135;
-            }
-            else if (orientFloat > 155 && orientFloat < 205)
-            {
-                orientEnum = Orient.o180;
-            }
-            else if (orientFloat >= 205 && orientFloat <= 245)
-            {
-                orientEnum = Orient.o225;
-            }
-            else if (orientFloat > 245 && orientFloat < 295)
-            {
-                orientEnum = Orient.o270;
-            }
-            else if (orientFloat >= 295 && orientFloat <= 335)
-            {
-                orientEnum = Orient.o305;
-            }
-            else
-            {
-                orientEnum = Orient.None;
-                // Debug.Log(orientFloat);
-                //Debug.Log("not a good orientation calculation or else not correct positioning of locations");
-                //throw new System.Exception();
-            }
-            return orientEnum;
+            
+            return bestSoFar;
         }
 
         public static List<List<CamPlanStep>> GetPermutationCameraShots(TimelineDecomposition decomp,
@@ -202,7 +176,9 @@ namespace CompilationNamespace
                     targetLocation = locationDict[substepTarget.ID];
                 }
 
+                // Either way, it has been replaced
                 discStepClone.TargetDetails.location = targetLocation;
+
                 // ?? Don't override with the cam details - this should not be specified.
 
                 //////////////////////////////////////////////////
@@ -236,7 +212,6 @@ namespace CompilationNamespace
                 discStepClone.TargetDetails.orient = targetOrient;
                 discStepClone.CamDetails.targetOrientation = targetOrient;
 
-                // If this were a 2-person shot, then target Orient refers to the target the camera is relative to, whereas orientTowards refers to the target.
 
                 //////////////////////////////////////////////////
                 ///////////////    Navigation     ////////////////
@@ -248,19 +223,50 @@ namespace CompilationNamespace
                 if (unityActionTag == "Navigation")
                 {
                     // Find graph edge traversed for this action.
-                    Edge traversededge;
+                    Tuple<Edge, int> traversedDirectedEdge;
                     if (!orientTowards.Equals("") && !targetLocation.Equals(""))
                     {
-                        traversededge = LocationGraph.FindRelevantEdge(targetLocation, orientTowards);
+                        traversedDirectedEdge = LocationGraph.FindRelevantDirectedEdge(targetLocation, orientTowards);
                     }
                     else
                     {
                         // This has default of being 1, and 2 indices of step's term.
-                        traversededge = LocationGraph.FindRelevantEdge(substepTarget.Terms[1].Constant, substepTarget.Terms[2].Constant);
+                        traversedDirectedEdge = LocationGraph.FindRelevantDirectedEdge(substepTarget.Terms[1].Constant, substepTarget.Terms[2].Constant);
+                    }
+
+                    Edge traversededge = traversedDirectedEdge.First;
+                    int direction = traversedDirectedEdge.Second;
+
+                    List<CamSchema> navCamOptions;
+                    if (actionSeg.directive == CamDirective.Follow)
+                    {
+                        if (direction == -1)
+                        {
+                            navCamOptions = CamGen.GetCamsForEdgeAndPercent(NavCamDict, traversededge, 1 - actionSeg.startPercent);
+                        }
+                        else
+                        {
+                            navCamOptions = CamGen.GetCamsForEdgeAndPercent(NavCamDict, traversededge, actionSeg.startPercent);
+
+                        }
+                        
                     }
 
                     // Narrow cam options to those that target the location mapped most closely to the percentage of the traversed edge
-                    var navCamOptions = CamGen.GetCamsForEdgeAndPercent(NavCamDict, traversededge, actionSeg.startPercent + ((actionSeg.endPercent - actionSeg.startPercent) / 2));
+                    else
+                    {
+                        double perc = actionSeg.startPercent + ((actionSeg.endPercent - actionSeg.startPercent) / 2);
+                        if (direction == -1)
+                        {
+                            navCamOptions = CamGen.GetCamsForEdgeAndPercent(NavCamDict, traversededge, 1 - perc);
+                        }
+                        else
+                        {
+                            navCamOptions = CamGen.GetCamsForEdgeAndPercent(NavCamDict, traversededge, perc);
+
+                        }
+                        
+                    }
                    // var navCamOptions = NavCamDict[traversededge][actionSeg.startPercent + ((actionSeg.endPercent - actionSeg.startPercent) / 2)];
 
                     //////////////////////////////////////////////////
@@ -298,7 +304,7 @@ namespace CompilationNamespace
                 cndtSet = new List<CamPlanStep>();
 
                 // Filtering stage: For each camera object...
-                foreach (var camOption in CamOptions)
+                foreach (var camOption in CameraCacheManager.CachedCams)
                 {
                     // Cam Schema must be consistent with option
                     if (!discStepClone.CamDetails.IsConsistent(camOption))
@@ -398,7 +404,6 @@ namespace CompilationNamespace
                         // Note: need to keep the "actionVarName" the same so that we can reference later... UGAF GroundDecompositionsToCompositeSteps (Line 212)
                         //actionseg.actionVarName = ps.ToString(); // DO NOT
 
-
                         /////////////////////////////////////////////
                         ///////////////  ActionID ////////////
                         /////////////////////////////////////////////
@@ -411,8 +416,18 @@ namespace CompilationNamespace
                         /////////////////////////////////////////////
 
                         // If the target is not provided, then take the first Term of the referenced action
+                        var splitTarget = actionseg.targetVarName.Split(' ');
                         if (actionseg.targetVarName.Equals(""))
                             actionseg.targetVarName = ps.Terms[0].Constant;
+                        else if (splitTarget.Count() > 1)
+                        {
+                            var newTargetName = "";
+                            foreach(var item in splitTarget)
+                            {
+                                newTargetName += decompClone.Terms.Single(term => term.Variable.Equals(item)).Constant + " ";
+                            }
+                            actionseg.targetVarName = newTargetName;
+                        }
                         else
                         {
                             // Otherwise, it ought to be a term that is referenced by the decomposition as a labeled variable
@@ -622,6 +637,11 @@ namespace CompilationNamespace
                     }
                 }
 
+
+                if (constraint.First.Equals("180 rule"))
+                {
+
+                }
                 // Jump Cut
                 // 180 degree rule
                 // Continuity formula above threshold?

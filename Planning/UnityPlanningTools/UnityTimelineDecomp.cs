@@ -113,7 +113,7 @@ namespace PlanningNamespace {
             if (readClips)
             {
                 readClips = false;
-                if (GroundActionFactory.GroundActions == null || GroundActionFactory.GroundActions.Count == 0)
+                if (GroundActionFactory.GroundActions == null || GroundActionFactory.GroundActions.Count == 0 || GroundActionFactory.TypeDict == null)
                 {
                     var UGAF = GameObject.Find("GroundActionFactory").GetComponent<UnityGroundActionFactory>();
                     UGAF.PreparePlanner(true);
@@ -697,11 +697,11 @@ namespace PlanningNamespace {
             // Assign directive
             ////////////////////
 
-            cps.directive = discClip.asset.camDirective;
-            if (cps.directive == BoltFreezer.Camera.CameraEnums.CamDirective.None)
-            {
-                cps.directive = BoltFreezer.Camera.CameraEnums.CamDirective.Pan;
-            }
+            //cps.directive = discClip.asset.camDirective;
+            //if (cps.directive == BoltFreezer.Camera.CameraEnums.CamDirective.None)
+            //{
+            //    cps.directive = BoltFreezer.Camera.CameraEnums.CamDirective.Pan;
+            //}
 
             // include here, other constraints that can be tacked on, like horizontal and vertical damping, amount of lead time, etc. Can we just display the entire cinemachine camera body?
 
@@ -712,19 +712,19 @@ namespace PlanningNamespace {
                 // special constraints for different kinds of targets? Here, would create a new target and perhaps merge 2 targets?
                 if (constraintParts[0].Equals("2-shot"))
                 {
-                    // "2-shot orientTowards agentOfFocus"
+                    // "2-shot agent(anchor), agent(focus)"
                     // "2-shot locat0 locat1"
 
-                    var orientTowards = constraintParts[1];
+                    var anchor = constraintParts[1];
 
-                    if (!this.TermNames.Contains(orientTowards))
+                    if (!this.TermNames.Contains(anchor))
                     {
                         throw new System.Exception("constraint terms must be labeled variables");
                     }
 
-                    var agentOfFocus = constraintParts[2];
+                    var focus = constraintParts[2];
 
-                    if (!this.TermNames.Contains(agentOfFocus))
+                    if (!this.TermNames.Contains(focus))
                     {
                         throw new System.Exception("constraint terms must be labeled variables");
                     }
@@ -734,7 +734,7 @@ namespace PlanningNamespace {
                     /////////////////////////////
 
                     // orientTowards, setting this variable so that orient is calculated with respect to the direction towards this element
-                    cps.TargetDetails.orientTowards = orientTowards;
+                    //cps.TargetDetails.orientTowards = focus;
 
                     /////////////////////////////
                     //// Target Var Name (var) //
@@ -742,14 +742,16 @@ namespace PlanningNamespace {
 
                     // agentOfFocus is the agent, at the orientTowards location, that the camera should focus on.
                     var targetActionSeg = cps.TargetDetails.ActionSegs[cps.TargetDetails.actionSegOfFocus];
-                    targetActionSeg.targetVarName = agentOfFocus;
+
+                    // Use a special symbol to denote that 2 things are specified here. can split on this special character during execution.
+                    targetActionSeg.targetVarName = focus + "  " + anchor;
 
                     /////////////////////////////
                     //// Group Target Directive /
                     /////////////////////////////
 
                     // It ought to be set to this already; but in case it is not...
-                    cps.directive = CamDirective.GroupAim;
+                    //cps.directive = CamDirective.GroupAim;
                 }
             }
 

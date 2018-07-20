@@ -18,24 +18,12 @@ namespace CameraNamespace
 
         public static string Path = @"D:\Documents\Frostbow\Cached\Cams\";
 
-        public static void CacheCam(CamSchema cas)
-        {
-            CachedCams.Add(cas);
-        }
-
-
-
-        public static void CacheCam(GameObject cam)
-        {
-            CacheCam(cam.GetComponent<CamAttributesStruct>().AsSchema());
-        }
-
-        public static bool CacheCams(List<GameObject> cams, string fileName)
+        public static bool CacheCams(List<CamSchema> cams, string fileName)
         {
             CachedCams = new List<CamSchema>();
             foreach (var cam in cams)
             {
-                CacheCam(cam);
+                CachedCams.Add(cam);
             }
             return SerializeCams(fileName);
         }
@@ -91,15 +79,28 @@ namespace CameraNamespace
                     continue;
                 }
 
+                // Get location name, split
                 var edgeName = nameOfLocation.Split('_')[0];
                 String[] substrings = edgeName.Split('-');
+
+                // Get x position
                 var xNode = substrings[0];
                 var xPos = GameObject.Find(xNode).transform.position;
+
+                // Get y position
                 var yNode = substrings[1];
                 var yPos = GameObject.Find(yNode).transform.position;
+
+                // Get intermediate location
                 var intermediateLoc = GameObject.Find(nameOfLocation).transform.position;
+
+                // Get percent of distance
                 var percentIntoEdge = Vector3.Distance(xPos, intermediateLoc) / Vector3.Distance(xPos, yPos);
+
+                // Find relevant edge
                 var edge = LocationGraph.FindRelevantEdge(xNode, yNode);
+
+                // Create dictionary entry
                 if (!navCamDict[edge].ContainsKey(percentIntoEdge))
                 {
                     navCamDict[edge][percentIntoEdge] = new List<CamSchema>();

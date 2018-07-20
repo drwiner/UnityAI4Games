@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System;
+using BoltFreezer.Utilities;
 
 namespace GraphNamespace
 {
@@ -25,13 +26,19 @@ namespace GraphNamespace
         void Start()
         {
             CalculateEdges();
+            makeEdgesByHand = true;
         }
 
         public void Update()
         {
             if (makeEdgesByHand)
             {
-
+                makeEdgesByHand = false;
+                Edges = new List<Edge>();
+                Edges.Add(new Edge(Nodes[0], Nodes[1], 0f));
+                Edges.Add(new Edge(Nodes[1], Nodes[2], 0f));
+                Edges.Add(new Edge(Nodes[2], Nodes[3], 0f));
+                Edges.Add(new Edge(Nodes[1], Nodes[3], 0f));
             }
             else if (calculateEdgesByDistance)
             {
@@ -116,6 +123,22 @@ namespace GraphNamespace
                 if (edge.T.name.Equals(location1) && edge.S.name.Equals(location2))
                 {
                     return edge;
+                }
+            }
+            return null;
+        }
+
+        public Tuple<Edge, int> FindRelevantDirectedEdge(string location1, string location2)
+        {
+            foreach (var edge in Edges)
+            {
+                if (edge.S.name.Equals(location1) && edge.T.name.Equals(location2))
+                {
+                    return new Tuple<Edge,int>(edge, 1);
+                }
+                if (edge.T.name.Equals(location1) && edge.S.name.Equals(location2))
+                {
+                    return new Tuple<Edge, int>(edge, -1);
                 }
             }
             return null;

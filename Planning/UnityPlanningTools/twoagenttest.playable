@@ -37,6 +37,8 @@ MonoBehaviour:
     targetOrientation: 0
     hangle: 3
     vangle: 1
+    distance: 0
+    height: 0
   targetSchema:
     orient: 0
     actionSegOfFocus: 0
@@ -48,14 +50,15 @@ MonoBehaviour:
       actiontypeID: 0
       startPercent: 0.81
       endPercent: 1
-      screenxz: 4
+      screenxy: 4
+      directive: 2
     - actionVarName: Look1
       targetVarName: 
       actiontypeID: 0
       startPercent: 0
       endPercent: 0.73
-      screenxz: 4
-  camDirective: 2
+      screenxy: 4
+      directive: 2
   Constraints: []
 --- !u!114 &114081251381941930
 MonoBehaviour:
@@ -87,12 +90,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 372f6bb2f4dee2748afc882c784fb3f0, type: 3}
   m_Name: ConstraintAsset
   m_EditorClassIdentifier: 
+  editingConstraints: 
   Constraints:
   - precond not occupied arrive1
   - precond adjacent arrive0 arrive1
   - link Arrive Look0
   - link Arrive2 Look1
-  - effect facing agent0 agent0 arrive0 arrive1
+  - effect facing agent0 agent1 arrive0 arrive1
 --- !u!114 &114512863760809516
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -205,6 +209,8 @@ MonoBehaviour:
     targetOrientation: 0
     hangle: 1
     vangle: 3
+    distance: 0
+    height: 0
   targetSchema:
     orient: 0
     actionSegOfFocus: 0
@@ -212,14 +218,13 @@ MonoBehaviour:
     orientTowards: arrive1
     ActionSegs:
     - actionVarName: Arrive
-      targetVarName: agent1
+      targetVarName: agent1 arrive1
       actiontypeID: 0
       startPercent: 0
       endPercent: 0.79
-      screenxz: 4
-  camDirective: 4
-  Constraints:
-  - 2-shot arrive1 agent1
+      screenxy: 4
+      directive: 4
+  Constraints: []
 --- !u!114 &114591098725930470
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -256,6 +261,8 @@ MonoBehaviour:
     targetOrientation: 0
     hangle: 8
     vangle: 1
+    distance: 0
+    height: 0
   targetSchema:
     orient: 0
     actionSegOfFocus: 0
@@ -267,14 +274,15 @@ MonoBehaviour:
       actiontypeID: 0
       startPercent: 0.79
       endPercent: 1
-      screenxz: 4
+      screenxy: 4
+      directive: 2
     - actionVarName: Look0
       targetVarName: 
       actiontypeID: 0
       startPercent: 0
       endPercent: 1
-      screenxz: 4
-  camDirective: 2
+      screenxy: 4
+      directive: 2
   Constraints: []
 --- !u!114 &114879984951233900
 MonoBehaviour:
