@@ -513,11 +513,16 @@ namespace PlanningNamespace {
             var whichDecomp = GroundDecomps[whichTestItem];
             // how do you execute?
             Debug.Log(whichDecomp.ToString());
+            Debug.Log("Fabula:");
             foreach (var substep in whichDecomp.SubSteps)
             {
                 Debug.Log(substep);
             }
-            
+            Debug.Log("Discourse:");
+            foreach(var substep in whichDecomp.discourseSubSteps)
+            {
+                Debug.Log(substep.ToString());
+            }
         }
 
         public PlanStep ReadStepVariable(ClipSchema<FabulaAsset> schema)

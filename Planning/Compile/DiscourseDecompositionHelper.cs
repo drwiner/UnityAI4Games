@@ -418,31 +418,24 @@ namespace CompilationNamespace
                         // If the target is not provided, then take the first Term of the referenced action
                         var splitTarget = actionseg.targetVarName.Split(' ');
                         if (actionseg.targetVarName.Equals(""))
+                        {
                             actionseg.targetVarName = ps.Terms[0].Constant;
+                        }
                         else if (splitTarget.Count() > 1)
                         {
                             var newTargetName = "";
-                            foreach(var item in splitTarget)
+                            foreach (var item in splitTarget)
                             {
                                 newTargetName += decompClone.Terms.Single(term => term.Variable.Equals(item)).Constant + " ";
                             }
-                            actionseg.targetVarName = newTargetName;
+                            actionseg.targetVarName = newTargetName.TrimEnd(' ');
                         }
                         else
                         {
                             // Otherwise, it ought to be a term that is referenced by the decomposition as a labeled variable
                             actionseg.targetVarName = decompClone.Terms.Single(term => term.Variable.Equals(actionseg.targetVarName)).Constant;
-
-                            //// Check if visible. in camera shot.
-                            //if (groundCamAction.directive != CamDirective.Follow)
-                            //{
-                            //    if (!CamGen.IsValidShot(LocationMap[groundCamAction.TargetDetails.location], GameObject.Find(actionseg.targetVarName)))
-                            //    {
-
-                            //    }
-                            //}
-
                         }
+                       
                     }
 
                     camSubStepDict[camActionSchema.ID] = groundCamAction;

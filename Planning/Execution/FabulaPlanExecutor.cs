@@ -124,7 +124,7 @@ namespace  PlanningNamespace
 
         public static double CalculateSteeringDuration(SteeringParams sp, Vector3 origin, Vector3 destination)
         {
-            return (sp.MAXSPEED / (Vector3.Distance(destination, origin))) / 0.03;
+            return ((sp.MAXSPEED / (Vector3.Distance(destination, origin))) / 0.03) + 0.166; //.166 buffer to arrive at destination
         }
 
         public ClipInfo ProcessSteering(GameObject goWithActionName, string instruction, List<GameObject> terms, double startTime)
