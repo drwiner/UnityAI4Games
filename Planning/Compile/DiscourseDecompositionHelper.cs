@@ -452,7 +452,20 @@ namespace CompilationNamespace
                     continue;
                 }
 
-                // can now update the couple fabcntgs that are of note
+
+                //////////////////////////////////////////////////////////////////////
+                //////////////////////////////////////////////////////////////////////
+                //////////////////////////////////////////////////////////////////////
+                // Compile Sub-Plan 
+                //////////////////////////////////////////////////////////////////////
+                //////////////////////////////////////////////////////////////////////
+                //////////////////////////////////////////////////////////////////////
+
+                //////////////////////////////////////////////////////////////////////
+                // Story cntgs
+                //////////////////////////////////////////////////////////////////////
+
+                // Can now update the couple fabcntgs that are of note
                 var newFabCntgs = new List<Tuple<IPlanStep, IPlanStep>>();
                 foreach (var subCntg in decomp.fabCntgs)
                 {
@@ -468,6 +481,9 @@ namespace CompilationNamespace
                 }
                 decomp.fabCntgs = newFabCntgs;
 
+                //////////////////////////////////////////////////////////////////////
+                // Camera orderings 
+                //////////////////////////////////////////////////////////////////////
 
                 var newDOrderings = new List<Tuple<CamPlanStep, CamPlanStep>>();
                 foreach (var subOrdering in decomp.discOrderings)
@@ -475,6 +491,10 @@ namespace CompilationNamespace
                     var newOrdering = new Tuple<CamPlanStep, CamPlanStep>(camSubStepDict[subOrdering.First.ID], camSubStepDict[subOrdering.Second.ID]);
                     newDOrderings.Add(newOrdering);
                 }
+
+                //////////////////////////////////////////////////////////////////////
+                // Story orderings
+                //////////////////////////////////////////////////////////////////////
 
                 var newFOrderings = new List<Tuple<IPlanStep, IPlanStep>>();
                 foreach (var subordering in decomp.SubOrderings)
@@ -492,6 +512,10 @@ namespace CompilationNamespace
                 }
                 decomp.SubOrderings = newFOrderings;
 
+                //////////////////////////////////////////////////////////////////////
+                // Camera cntgs
+                //////////////////////////////////////////////////////////////////////
+
                 var newDiscCntgs = new List<Tuple<CamPlanStep, CamPlanStep>>();
                 foreach (var subCntg in decomp.discCntgs)
                 {
@@ -499,6 +523,9 @@ namespace CompilationNamespace
                     newDiscCntgs.Add(newcntg);
                 }
 
+                //////////////////////////////////////////////////////////////////////
+                // Permutations of 'd' links Causal Links
+                //////////////////////////////////////////////////////////////////////
 
 
                 var linkWorlds = new List<List<CausalLink<CamPlanStep>>>();

@@ -302,9 +302,13 @@ namespace PlanningNamespace
             var domain = new Domain("unityWorld", BoltFreezer.Enums.PlanType.PlanSpace, newOps);
             domain.AddTypePair("SteeringAgent", "Agent");
             domain.AddTypePair("Block", "Item");
+            domain.AddTypePair("Walkable", "Location");
+            domain.AddTypePair("Aux", "Location");
             domain.AddTypePair("", "SteeringAgent");
             domain.AddTypePair("", "Block");
-            domain.AddTypePair("", "Location");
+            domain.AddTypePair("", "Walkable");
+            domain.AddTypePair("", "Aux");
+
 
             return domain;
         }
@@ -397,7 +401,7 @@ namespace PlanningNamespace
             var objects = new List<IObject>();
             foreach (var location in locations)
             {
-                objects.Add(new Obj(location.name, "Location") as IObject);
+                objects.Add(new Obj(location.name, location.tag) as IObject);
             }
             foreach (var actor in actors)
             {

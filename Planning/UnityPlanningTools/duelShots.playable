@@ -59,8 +59,8 @@ MonoBehaviour:
   targetSchema:
     orient: 0
     actionSegOfFocus: 0
-    location: arrive1
-    orientTowards: arrive0
+    location: 
+    orientTowards: 
     ActionSegs:
     - actionVarName: Look1
       targetVarName: agent1 agent0
@@ -206,8 +206,8 @@ MonoBehaviour:
   targetSchema:
     orient: 0
     actionSegOfFocus: 0
-    location: arrive0
-    orientTowards: arrive1
+    location: 
+    orientTowards: 
     ActionSegs:
     - actionVarName: Look0
       targetVarName: agent0 agent1

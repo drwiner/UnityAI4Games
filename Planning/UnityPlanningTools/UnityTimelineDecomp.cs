@@ -292,6 +292,18 @@ namespace PlanningNamespace {
                 {
                     var constraintParts = constraint.Split(' ');
 
+                    if (constraint.Equals("refresh orderings discoursetrack"))
+                    {
+                        dorderings = new List<Tuple<CamPlanStep,CamPlanStep>>();
+                    }
+                    if (constraintParts[0].Equals("d<"))
+                    {
+                        var prec = discVarStepMap[constraintParts[1]];
+                        var cons = discVarStepMap[constraintParts[2]];
+                        var ordering = new Tuple<CamPlanStep, CamPlanStep>(prec, cons);
+                        dorderings.Add(ordering);
+                    }
+
                     if (constraintParts[0].Equals("="))
                     {
                         // this could mean that 2 variables are equal, or that a new constant is to be declared that has the name and terms
