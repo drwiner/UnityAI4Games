@@ -313,6 +313,19 @@ namespace PlanningNamespace
             return domain;
         }
 
+        public static bool IsStatic(string s)
+        {
+            if (s.Equals("adjacent"))
+            {
+                return true;
+            }
+            if (s.Equals("placeable"))
+            {
+                return true;
+            }
+            return false;
+        }
+
         public IPlan PreparePlanner(bool resetCache)
         {
             
@@ -357,12 +370,12 @@ namespace PlanningNamespace
 
             // Remove Irrelevant Actions (those which require an adjacent edge but which does not exist. In Refactoring--> make any static
             Debug.Log("removing irrelevant actions");
-            var adjInitial = initPlan.Initial.Predicates.Where(state => state.Name.Equals("adjacent"));
+            var adjInitial = initPlan.Initial.Predicates.Where(state => IsStatic(state.Name));
             var replacedActions = new List<IOperator>();
             foreach (var ga in GroundActionFactory.GroundActions)
             {
                 // If this action has a precondition with name adjacent this is not in initial state, then it's impossible. True ==> impossible. False ==> OK!
-                var isImpossible = ga.Preconditions.Where(pre => pre.Name.Equals("adjacent") && pre.Sign).Any(pre => !adjInitial.Contains(pre));
+                var isImpossible = ga.Preconditions.Where(pre => IsStatic(pre.Name) && pre.Sign).Any(pre => !adjInitial.Contains(pre));
                 if (isImpossible)
                     continue;
                 replacedActions.Add(ga);

@@ -77,4 +77,37 @@ namespace TimelineClipsNamespace
         }
     }
 
+    public class Dettach2ToParentPlayable : PlayableBehaviour
+    {
+        private GameObject _child;
+        private Transform defaultParent;
+
+        public void Initialize(GameObject child, GameObject originalParent)
+        {
+            _child = child;
+            defaultParent = originalParent.transform;
+        }
+
+        public override void ProcessFrame(Playable playable, FrameData info, object playerData)
+        {
+            if (playable.GetTime() <= 0 || _child == null || defaultParent == null)
+                return;
+
+            _child.transform.parent = defaultParent;
+        }
+
+        public override void OnBehaviourPlay(Playable playable, FrameData info)
+        {
+            _child.transform.parent = defaultParent;
+        }
+        public override void OnBehaviourPause(Playable playable, FrameData info)
+        {
+            if (info.evaluationType == FrameData.EvaluationType.Playback)
+            {
+                // Instead, keep an internal reference on game object of original parent transform.
+                //_child.transform.parent = OriginalParent;
+            }
+        }
+    }
+
 }

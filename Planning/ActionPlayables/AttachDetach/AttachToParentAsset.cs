@@ -39,4 +39,22 @@ namespace TimelineClipsNamespace
         }
     }
 
+    public class Dettach2ToParent : PlayableAsset
+    {
+        public ExposedReference<GameObject> Child;
+        public ExposedReference<GameObject> OriginalParent;
+
+        public override Playable CreatePlayable(PlayableGraph graph, GameObject owner)
+        {
+            var playable = ScriptPlayable<Dettach2ToParentPlayable>.Create(graph);
+            var dettach2ToParentPlayable = playable.GetBehaviour();
+
+            var child = Child.Resolve(playable.GetGraph().GetResolver());
+            var oldParent = OriginalParent.Resolve(playable.GetGraph().GetResolver());
+
+            dettach2ToParentPlayable.Initialize(child, oldParent);
+            return playable;
+        }
+    }
+
 }

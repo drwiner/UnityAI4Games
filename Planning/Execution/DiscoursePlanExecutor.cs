@@ -22,6 +22,8 @@ namespace PlanningNamespace
     {
         public PlayableDirector director;
 
+       // protected Dictionary<GameObject, GameObject> LastAttachMap;
+
         public PlayableDirector Director
         {
             get { return director; }
@@ -46,6 +48,8 @@ namespace PlanningNamespace
             panTrack = timeline.CreateTrack<PlayableTrack>(null, "pan_track");
             followTrack = timeline.CreateTrack<PlayableTrack>(null, "follow_track");
             screenTrack = timeline.CreateTrack<PlayableTrack>(null, "screen_track");
+
+        //    LastAttachMap = new Dictionary<GameObject, GameObject>();
 
             var main_camera_object = GameObject.FindGameObjectWithTag("MainCamera");
             director.SetGenericBinding(filmTrack, main_camera_object);
@@ -112,9 +116,13 @@ namespace PlanningNamespace
                 //var lastDirective = null;
                 //var lastCoordinate = null;
 
+                bool hasNavBeforeEnd = false;
+
                 accumulatedTime = 0;
-                foreach (var actionSeg in targetSchema.ActionSegs)
+                //foreach (var actionSeg in targetSchema.ActionSegs)
+                for (int asegIndex = 0; asegIndex < targetSchema.ActionSegs.Count; asegIndex++)
                 {
+                    var actionSeg = targetSchema.ActionSegs[asegIndex];
 
                     var targetOfFocus = CreateTarget(actionSeg.targetVarName).transform;
 
@@ -141,7 +149,16 @@ namespace PlanningNamespace
                     // If this Unity Action is a "navigation" action, then extra steps are required
                     if (unityActionOperatorHost.tag.Equals("Navigation"))
                     {
-                        FilmNavigation(cameraClone, cvc, ccb, CI, timelineclip, actionSeg, actionSeg.directive, intoClipStart, targetOfFocus, targetLocation);
+                        bool lastSeg = false;
+                        if (asegIndex == targetSchema.ActionSegs.Count - 1 && actionSeg.directive.Equals(CamDirective.Follow))
+                        {
+                            lastSeg = true;
+                        }
+                        else
+                        {
+                            hasNavBeforeEnd = true;
+                        }
+                        FilmNavigation(cameraClone, cvc, ccb, CI, timelineclip, actionSeg, actionSeg.directive, intoClipStart, targetOfFocus, targetLocation, lastSeg);
                     }
                     else // It's not a navigation action.
                     {
@@ -170,13 +187,9 @@ namespace PlanningNamespace
                             //return groupTarget.transform;
 
                         }
-                        else if (actionSeg.directive.Equals(CamDirective.Follow))
-                        {
-                            // TODO: add "last follow" if then clause
-                            FollowClip((float)CI.start, (float)CI.duration, CI.display, cvc, targetOfFocus);
-                        }
                         else
                         {
+
                             if (targetOfFocus.name.Equals(lastPan))
                             {
                                 lastPanAsset.duration += (float)CI.duration;
@@ -189,8 +202,8 @@ namespace PlanningNamespace
                             }
                         }
 
-                        //FilmStationary(cameraClone, cvc, ccb, CI, actionSeg, actionSeg.directive, targetOfFocus, targetLocation);
-                    }
+                            //FilmStationary(cameraClone, cvc, ccb, CI, actionSeg, actionSeg.directive, targetOfFocus, targetLocation);
+                        }
 
                     // Add new focus clip if app
                     if (targetOfFocus.name.Equals(lastFocus))
@@ -243,6 +256,17 @@ namespace PlanningNamespace
                 TimeClip((float)startTime, (float)accumulatedTime- .12f, cameraClone.name, directorOfThisSegment, (float)intoClipStartFirstSegment);
                 FilmClip((float)startTime, (float)accumulatedTime, cameraClone.name, cvc);
                 startTime += accumulatedTime;
+
+                // Add clip at end that returns camera to original position.
+                if (hasNavBeforeEnd)
+                {
+                    var lerpClip = lerpTrack.CreateClip<LerpToMoveObjectAsset>();
+                    lerpClip.start = startTime;
+                    lerpClip.duration = 0.1f;
+                    lerpClip.displayName = "return camera to starting pos";
+                    LerpToMoveObjectAsset lClip = lerpClip.asset as LerpToMoveObjectAsset;
+                    TransformToBind(lClip, cameraClone, cameraClone.transform);
+                }
             }
 
             director.playableAsset = timeline;
@@ -286,7 +310,7 @@ namespace PlanningNamespace
         //}
 
         public void FilmNavigation(GameObject cameraClone, CinemachineVirtualCamera cvc, CinemachineCameraBody ccb, ClipInfo CI, ClipInfo timelineclip, 
-            ActionSeg actionSeg, CamDirective CameraAimType, double intoClipStart, Transform targetOfFocus, Transform targetLocation)
+            ActionSeg actionSeg, CamDirective CameraAimType, double intoClipStart, Transform targetOfFocus, Transform targetLocation, bool lastSeg)
         {
             Vector3 halfwayPointDistanceTraveled;
             Vector3 whereObjectWillBeAtStart = Vector3.zero;
@@ -393,12 +417,50 @@ namespace PlanningNamespace
                 //cameraClone.transform.position = cameraClone.transform.position + displacement;
                 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-                cameraClone.transform.LookAt(targetLocation);
+                //cameraClone.transform.LookAt(targetLocation);
+                cvc.m_LookAt = targetLocation;
 
-                cvc.m_Follow = targetLocation;
-                var cft = cvc.AddCinemachineComponent<CinemachineTransposer>();
+                PanClip((float)CI.start + 0.0833f, (float)CI.duration - 0.0833f, CI.display, cvc, targetOfFocus);
+
+                var parent = targetOfFocus;
+                var attachClip = attachTrack.CreateClip<AttachToParent>();
+                attachClip.start = CI.start;
+                attachClip.duration = CI.duration - .22f;
+                attachClip.displayName = string.Format("attach parent={0} ;{1}", parent.name, CI.display);
+                AttachToParent aClip = attachClip.asset as AttachToParent;
+                AttachBind(aClip, parent.gameObject, cameraClone);
+
+
+                var dettachClip = attachTrack.CreateClip<Dettach2ToParent>();
                 
-                FollowClip((float)CI.start, (float)CI.duration, CI.display, cvc, targetOfFocus);
+                dettachClip.start = CI.start + CI.duration - 0.21f;
+                dettachClip.duration = 0.2f;
+                dettachClip.displayName = string.Format("de-attach parent={0} ; {1}", parent.name, CI.display);
+                Dettach2ToParent dClip = dettachClip.asset as Dettach2ToParent;
+                DettachBind(dClip, cameraClone, cameraClone.transform.parent.gameObject);
+
+                
+                // Also, let's return the camera to its location
+                
+                if (lastSeg)
+                {
+                    var lerpClip = lerpTrack.CreateClip<LerpToMoveObjectAsset>();
+                    lerpClip.start = CI.start + CI.duration;
+                    lerpClip.duration = 0.1f;
+                    lerpClip.displayName = "return camera to starting pos";
+                    LerpToMoveObjectAsset lClip = lerpClip.asset as LerpToMoveObjectAsset;
+                    TransformToBind(lClip, cameraClone, cameraClone.transform);
+                }
+                else
+                {
+                    // it's not the last clip, so we need to add some safe amount of time before clip.
+                }
+                
+
+                //cvc.m_Follow = targetLocation;
+                //var cft = cvc.AddCinemachineComponent<CinemachineTransposer>();
+
+                //FollowClip((float)CI.start, (float)CI.duration, CI.display, cvc, targetOfFocus);
             }
             else if (CameraAimType.Equals(CamDirective.GroupAim))
             {
@@ -505,6 +567,31 @@ namespace PlanningNamespace
             director.SetReferenceValue(xyasset.CVC.exposedName, cvc);
         }
 
+        public void AttachBind(AttachToParent atpObj, GameObject parent, GameObject child)
+        {
+            atpObj.Parent.exposedName = UnityEditor.GUID.Generate().ToString();
+            atpObj.Child.exposedName = UnityEditor.GUID.Generate().ToString();
+            director.SetReferenceValue(atpObj.Parent.exposedName, parent);
+            director.SetReferenceValue(atpObj.Child.exposedName, child);
+        }
+
+        public void DettachBind(Dettach2ToParent dtpObj, GameObject child, GameObject oldParent)
+        {
+            dtpObj.Child.exposedName = UnityEditor.GUID.Generate().ToString();
+            dtpObj.OriginalParent.exposedName =  UnityEditor.GUID.Generate().ToString();
+            director.SetReferenceValue(dtpObj.Child.exposedName, child);
+            director.SetReferenceValue(dtpObj.OriginalParent.exposedName, oldParent);
+        }
+
+        public void TransformToBind(LerpToMoveObjectAsset tpObj, GameObject obj_to_move, Transform end_pos)
+        {
+
+            tpObj.ObjectToMove.exposedName = UnityEditor.GUID.Generate().ToString();
+            tpObj.LerpMoveTo.exposedName = UnityEditor.GUID.Generate().ToString();
+            director.SetReferenceValue(tpObj.ObjectToMove.exposedName, obj_to_move);
+            director.SetReferenceValue(tpObj.LerpMoveTo.exposedName, end_pos);
+        }
+
         public TimelineClip ScreenCoordinateClip(float start, float duration, string displayname, CinemachineVirtualCamera cvc, Tuple<double, double> screenxz)
         {
             TimelineClip tc = screenTrack.CreateClip<CamScreenCompositionAsset>();
@@ -601,6 +688,7 @@ namespace PlanningNamespace
             SteeringAsset steer_clip = steerClip.asset as SteeringAsset;
             SteerBind(dir, steer_clip, go, startPos, goalPos, depart, arrival, isMaster);
         }
+
 
     }
 }

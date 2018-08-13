@@ -15,6 +15,7 @@ namespace  PlanningNamespace
     {
         public PlayableDirector director;
         protected Dictionary<GameObject, GameObject> LastAttachMap;
+
         public PlayableDirector Director
         {
             get { return director; }
@@ -166,7 +167,7 @@ namespace  PlanningNamespace
 
             var CI = new ClipInfo(director, startTime, duration, instruction);
 
-            if (instructionType.Equals("play") || instructionType.Equals("always-play"))
+            if (instructionType.Equals("always-play"))
             {
                 // implies only 1 argument, unless refactored later
                 var agent = terms[Int32.Parse(instructionParts[1])];
@@ -174,6 +175,15 @@ namespace  PlanningNamespace
 
                 // Clones action and sets binding
                 var goClone = SetAgentToGenericAction(goWithAction, animationHost);
+                var controlTrackClip = ctrack.CreateDefaultClip();
+                CI.display = string.Format("playing timeline {0}", goWithAction.name);
+                AnimateClip(controlTrackClip, goClone, CI);
+            }
+
+            if (instructionType.Equals("play"))
+            {
+                var agent = terms[Int32.Parse(instructionParts[1])];
+                var goClone = SetAgentToGenericAction(goWithAction, agent);
                 var controlTrackClip = ctrack.CreateDefaultClip();
                 CI.display = string.Format("playing timeline {0}", goWithAction.name);
                 AnimateClip(controlTrackClip, goClone, CI);
@@ -256,13 +266,20 @@ namespace  PlanningNamespace
             if (instructionType.Equals("orient"))
             {
                 var agent = terms[Int32.Parse(instructionParts[1])];
-                var destination = terms[Int32.Parse(instructionParts[2])];
+                var origin = terms[Int32.Parse(instructionParts[2])];
+                var destination = terms[Int32.Parse(instructionParts[3])];
 
                 // Initiate the Steering capability of the agent (if not already set; fine if redundant)
                 var DS_TC = agent.GetComponent<DynoBehavior_TimelineControl>();
                 DS_TC.InitiateExternally();
+
+                CI.display = string.Format("orient {0} {1}", agent.name, destination.name);
                 // var test = destination.transform.position + destination.transform.localPosition;
                 OrientClip(agent, destination.transform.position, CI);
+
+                var followUpCI = new ClipInfo(director, startTime, 0.2f, "follow up");
+                var steerFinish = new Vector3(origin.transform.position.x, agent.transform.position.y, origin.transform.position.z);
+                SteerClip(agent, steerFinish, steerFinish, true, false, false, followUpCI);
             }
 
             return CI;

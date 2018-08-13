@@ -298,8 +298,8 @@ namespace CameraNamespace {
             camattributes.Set(scale, loc.name, orient, hangle, vangle);
 
             // composer parameters TODO: tweak via separate gameobject component structure
-            cc.m_HorizontalDamping = 0.2f;
-            cc.m_VerticalDamping = 0.2f;
+            cc.m_HorizontalDamping = 1.0f;
+            cc.m_VerticalDamping = 1.0f;
             cc.m_LookaheadTime = 0.2f;
             cc.m_DeadZoneWidth = 0.25f;
             cc.m_DeadZoneHeight = 0.25f;

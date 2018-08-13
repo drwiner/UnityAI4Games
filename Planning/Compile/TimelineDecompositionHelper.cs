@@ -29,7 +29,7 @@ namespace CompilationNamespace
         /// <returns>A list of decompositions with ground terms and where each sub-step is ground. </returns>
         public static List<TimelineDecomposition> Compose(int height, TimelineDecomposition TD)
         {
-            Debug.Log("Composing HTN for " + TD.Name);
+            Debug.Log("Composing HTN for " + TD.Name + " at height: " + height.ToString());
             ///////////////////////////////////////
             // START BY ADDING BINDINGS TO TERMS //
             ///////////////////////////////////////
@@ -344,12 +344,15 @@ namespace CompilationNamespace
 
         public static void RewriteFabSubSteps(TimelineDecomposition decomp, Dictionary<int, IPlanStep> actionReferenceMap)
         {
-            var newOrderings = new List<Tuple<IPlanStep, IPlanStep>>();
-            foreach (var ord in decomp.SubOrderings)
-            {
-                newOrderings.Add(new Tuple<IPlanStep, IPlanStep>(actionReferenceMap[ord.First.ID], actionReferenceMap[ord.Second.ID]));
-            }
-            decomp.SubOrderings = newOrderings;
+            // didn't need this... is that always true?
+            //var newOrderings = new List<Tuple<IPlanStep, IPlanStep>>();
+            //foreach (var ord in decomp.SubOrderings)
+            //{
+            //    newOrderings.Add(new Tuple<IPlanStep, IPlanStep>(actionReferenceMap[ord.First.ID], actionReferenceMap[ord.Second.ID]));
+            //}
+            //decomp.SubOrderings = newOrderings;
+
+
             //var newLinks = new List<CausalLink<IPlanStep>>();
             //foreach (var link in decomp.SubLinks)
             //{

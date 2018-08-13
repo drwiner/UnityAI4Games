@@ -46,7 +46,8 @@ namespace CompilationNamespace
         {
             var orientDict = new Dictionary<int, Orient>();
             var locationDict = new Dictionary<int, string>();
-
+            var locs = GroundActionFactory.TypeDict["Location"];
+                //.Contains(decomp.SubSteps[0].Terms[2].Constant)
             foreach (var substep in decomp.SubSteps)
             {
                 var orientEnum = MapToNearestOrientation(substep as PlanStep);
@@ -55,7 +56,8 @@ namespace CompilationNamespace
                 string earliestTermHack = "";
                 foreach (var term in substep.Terms)
                 {
-                    if (term.Type.Equals("Location"))
+                    if (locs.Contains(term.Constant))
+                    //if (term.Type.Equals("Location"))
                     {
                         earliestTermHack = term.Constant;
                         break;
@@ -249,7 +251,7 @@ namespace CompilationNamespace
                             navCamOptions = CamGen.GetCamsForEdgeAndPercent(NavCamDict, traversededge, actionSeg.startPercent);
 
                         }
-                        
+
                     }
 
                     // Narrow cam options to those that target the location mapped most closely to the percentage of the traversed edge
@@ -265,9 +267,9 @@ namespace CompilationNamespace
                             navCamOptions = CamGen.GetCamsForEdgeAndPercent(NavCamDict, traversededge, perc);
 
                         }
-                        
+
                     }
-                   // var navCamOptions = NavCamDict[traversededge][actionSeg.startPercent + ((actionSeg.endPercent - actionSeg.startPercent) / 2)];
+                    // var navCamOptions = NavCamDict[traversededge][actionSeg.startPercent + ((actionSeg.endPercent - actionSeg.startPercent) / 2)];
 
                     //////////////////////////////////////////////////
                     ///////////////    Reset Locations     ///////////
@@ -290,11 +292,15 @@ namespace CompilationNamespace
                         {
                             continue;
                         }
-  
+
                         var navCamAction = discStepClone.Clone() as CamPlanStep;
                         navCamAction.CamDetails = navcamoption.Clone();
 
                         cndtSet.Add(navCamAction);
+                    }
+                    if (cndtSet.Count == 0)
+                    {
+                        Debug.Log(string.Format("Camera Action {0} had no options", discStepClone.ToString()));
                     }
                     permList.Add(cndtSet);
                     continue;
@@ -330,6 +336,12 @@ namespace CompilationNamespace
                     // This camera is an option.
                     cndtSet.Add(groundDiscStep);
                 }
+
+                if (cndtSet.Count == 0)
+                {
+                    Debug.Log(string.Format("Camera Action {0} had no options", discStepClone.ToString()));
+                }
+
                 // for each discourse sub-step, cndtSet is the list of candidate and valid camera shots to rewrite.
                 permList.Add(cndtSet);
             }

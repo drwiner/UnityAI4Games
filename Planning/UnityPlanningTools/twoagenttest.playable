@@ -97,6 +97,7 @@ MonoBehaviour:
   - link Arrive Look0
   - link Arrive2 Look1
   - effect facing agent0 agent1 arrive0 arrive1
+  - ignoreDidNotStart Arrive2
 --- !u!114 &114512863760809516
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -218,7 +219,7 @@ MonoBehaviour:
     orientTowards: arrive1
     ActionSegs:
     - actionVarName: Arrive
-      targetVarName: agent1 arrive1
+      targetVarName: agent0 agent1
       actiontypeID: 0
       startPercent: 0
       endPercent: 0.79

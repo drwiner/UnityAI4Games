@@ -95,6 +95,10 @@ namespace PlanningNamespace {
             {
                 reset = false;
                 GroundDecomps = new List<TimelineDecomposition>();
+                if (TermNames.Count == 0)
+                {
+                    Terms = new List<ITerm>();
+                }
             }
             if (GroundDecomps == null)
             {
@@ -234,7 +238,7 @@ namespace PlanningNamespace {
                         var newCntg = new Tuple<IPlanStep, IPlanStep>(fabClipStepMap[last], planStep);
                         cntgs.Add(newCntg);
                     }
-                    else if(fabClip.start - lastItemEndTime > 0.6)
+                    else if(fabClip.start - lastItemEndTime >= 0.12)
                     {
                         // what's the maximum amount of space that can go into here? This is calculated by looking at specific action.
                         var ordering = new Tuple<IPlanStep, IPlanStep>(fabClipStepMap[last], planStep);
@@ -264,7 +268,7 @@ namespace PlanningNamespace {
                 if (i > 0)
                 {
                     var lastItemEndTime = dlast.start + dlast.duration;
-                    if (discClip.start - lastItemEndTime < 0.3)
+                    if (discClip.start - lastItemEndTime < 0.06)
                     {
                         // these are cntg
                         var newCntg = new Tuple<CamPlanStep, CamPlanStep>(discClipStepMap[dlast], camstep);
@@ -530,10 +534,25 @@ namespace PlanningNamespace {
             {
                 Debug.Log(substep);
             }
+            Debug.Log("Fabula Orderings:");
+            foreach(var ord in whichDecomp.SubOrderings)
+            {
+                Debug.Log(ord.ToString());
+            }
+            Debug.Log("Fabula Links:");
+            foreach(var link in whichDecomp.SubLinks)
+            {
+                Debug.Log(link.ToString());
+            }
             Debug.Log("Discourse:");
             foreach(var substep in whichDecomp.discourseSubSteps)
             {
                 Debug.Log(substep.ToString());
+            }
+            Debug.Log("Disc Orderings:");
+            foreach (var ord in whichDecomp.discOrderings)
+            {
+                Debug.Log(ord.ToString());
             }
         }
 
